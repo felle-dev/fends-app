@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'dart:math' as math;
 
 void main() {
@@ -89,6 +91,54 @@ class _AppControllerState extends State<AppController> {
   double _totalBudget = 0;
   DateTime? _finalDate;
   List<Transaction> _transactions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _isOnboarded = prefs.getBool('isOnboarded') ?? false;
+      _currency = prefs.getString('currency') ?? 'IDR';
+      _currencySymbol = prefs.getString('currencySymbol') ?? 'Rp';
+      _totalBudget = prefs.getDouble('totalBudget') ?? 0;
+
+      final dateString = prefs.getString('finalDate');
+      if (dateString != null) {
+        _finalDate = DateTime.parse(dateString);
+      }
+
+      final transactionsJson = prefs.getString('transactions');
+      if (transactionsJson != null) {
+        final List<dynamic> decoded = json.decode(transactionsJson);
+        _transactions = decoded.map((e) => Transaction.fromJson(e)).toList();
+      }
+
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isOnboarded', _isOnboarded);
+    await prefs.setString('currency', _currency);
+    await prefs.setString('currencySymbol', _currencySymbol);
+    await prefs.setDouble('totalBudget', _totalBudget);
+
+    if (_finalDate != null) {
+      await prefs.setString('finalDate', _finalDate!.toIso8601String());
+    }
+
+    final transactionsJson = json.encode(
+      _transactions.map((e) => e.toJson()).toList(),
+    );
+    await prefs.setString('transactions', transactionsJson);
+  }
 
   void _completeOnboarding(
     String currency,
@@ -103,19 +153,39 @@ class _AppControllerState extends State<AppController> {
       _totalBudget = budget;
       _finalDate = finalDate;
     });
+    _saveData();
   }
 
   void _addTransaction(Transaction transaction) {
     setState(() {
       _transactions.add(transaction);
     });
+    _saveData();
+  }
+
+  void _resetApp() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    setState(() {
+      _isOnboarded = false;
+      _currency = 'IDR';
+      _currencySymbol = 'Rp';
+      _totalBudget = 0;
+      _finalDate = null;
+      _transactions = [];
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     if (!_isOnboarded) {
       return OnboardingFlow(onComplete: _completeOnboarding);
     }
+
     return HomeScreen(
       currency: _currency,
       currencySymbol: _currencySymbol,
@@ -123,6 +193,7 @@ class _AppControllerState extends State<AppController> {
       finalDate: _finalDate!,
       transactions: _transactions,
       onAddTransaction: _addTransaction,
+      onReset: _resetApp,
     );
   }
 }
@@ -137,6 +208,18 @@ class Transaction {
     required this.isIncome,
     required this.date,
   });
+
+  Map<String, dynamic> toJson() => {
+    'amount': amount,
+    'isIncome': isIncome,
+    'date': date.toIso8601String(),
+  };
+
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+    amount: json['amount'],
+    isIncome: json['isIncome'],
+    date: DateTime.parse(json['date']),
+  );
 }
 
 class OnboardingFlow extends StatefulWidget {
@@ -175,10 +258,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       );
     } else {
       if (_selectedDate != null && _budgetController.text.isNotEmpty) {
+        final cleanText = _budgetController.text.replaceAll(',', '');
         widget.onComplete(
           _selectedCurrency,
           _selectedSymbol,
-          double.parse(_budgetController.text),
+          double.parse(cleanText),
           _selectedDate!,
         );
       }
@@ -201,8 +285,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 1:
         return true;
       case 2:
-        return _budgetController.text.isNotEmpty &&
-            double.tryParse(_budgetController.text) != null;
+        final cleanText = _budgetController.text.replaceAll(',', '');
+        return cleanText.isNotEmpty &&
+            double.tryParse(cleanText) != null &&
+            double.parse(cleanText) > 0;
       case 3:
         return _selectedDate != null;
       default:
@@ -437,43 +523,56 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             ),
           ),
           const SizedBox(height: 40),
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.savings_outlined,
-                  size: 64,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _budgetController,
-                  keyboardType: TextInputType.number,
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    prefixText: '$_selectedSymbol ',
-                    hintText: '0',
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _selectedSymbol,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  onChanged: (value) => setState(() {}),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  IntrinsicWidth(
+                    child: TextField(
+                      controller: _budgetController,
+                      keyboardType: TextInputType.number,
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 56,
+                      ),
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: '0',
+                        border: InputBorder.none,
+                        hintStyle: theme.textTheme.displayLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 56,
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                            0.3,
+                          ),
+                        ),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _ThousandsSeparatorInputFormatter(),
+                      ],
+                      onChanged: (value) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 2,
+                    width: 200,
+                    color: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
             ),
           ),
-          const Spacer(),
         ],
       ),
     );
@@ -498,56 +597,91 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 40),
-          Material(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now().add(const Duration(days: 30)),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (date != null) {
-                  setState(() => _selectedDate = date);
-                }
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.calendar_month,
-                      size: 64,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      _selectedDate == null
-                          ? 'Tap to select date'
-                          : DateFormat('MMM d, y').format(_selectedDate!),
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (_selectedDate != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        '${_selectedDate!.difference(DateTime.now()).inDays} days',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(height: 60),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().add(
+                            const Duration(days: 30),
+                          ),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
+                        );
+                        if (date != null) {
+                          setState(() => _selectedDate = date);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: theme.colorScheme.outline.withOpacity(0.3),
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              color: theme.colorScheme.primary,
+                              size: 28,
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              _selectedDate == null
+                                  ? 'Select Date'
+                                  : DateFormat(
+                                      'MMM d, y',
+                                    ).format(_selectedDate!),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
+                  ),
+                  if (_selectedDate != null) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${_selectedDate!.difference(DateTime.now()).inDays} days from now',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
-          const Spacer(),
         ],
       ),
     );
@@ -561,6 +695,7 @@ class HomeScreen extends StatefulWidget {
   final DateTime finalDate;
   final List<Transaction> transactions;
   final Function(Transaction) onAddTransaction;
+  final VoidCallback onReset;
 
   const HomeScreen({
     super.key,
@@ -570,6 +705,7 @@ class HomeScreen extends StatefulWidget {
     required this.finalDate,
     required this.transactions,
     required this.onAddTransaction,
+    required this.onReset,
   });
 
   @override
@@ -625,7 +761,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(title: const Text('Fends'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Fends'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Reset App',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Reset App?'),
+                  content: const Text(
+                    'This will delete all your data. Are you sure?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.onReset();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.colorScheme.error,
+                      ),
+                      child: const Text('Reset'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -785,6 +957,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ? _weeklyAllowance
         : _monthlyAllowance;
 
+    final period = _selectedTab == 0
+        ? 'per day'
+        : _selectedTab == 1
+        ? 'per week'
+        : 'per month';
+
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: Container(
@@ -812,6 +990,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  period,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer.withOpacity(
+                      0.7,
+                    ),
                   ),
                 ),
               ],
@@ -1034,42 +1221,105 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
-        return AlertDialog(
-          title: Text('Add ${isIncome ? 'Income' : 'Expense'}'),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Amount',
-              prefixText: '${widget.currencySymbol} ',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            autofocus: true,
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final amount = double.tryParse(controller.text);
-                if (amount != null && amount > 0) {
-                  widget.onAddTransaction(
-                    Transaction(
-                      amount: amount,
-                      isIncome: isIncome,
-                      date: DateTime.now(),
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isIncome ? 'Add Income' : 'Add Expense',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.currencySymbol,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  );
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Add'),
+                    const SizedBox(width: 12),
+                    IntrinsicWidth(
+                      child: TextField(
+                        controller: controller,
+                        keyboardType: TextInputType.number,
+                        autofocus: true,
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: '0',
+                          border: InputBorder.none,
+                          hintStyle: theme.textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withOpacity(0.3),
+                          ),
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          _ThousandsSeparatorInputFormatter(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          final cleanText = controller.text.replaceAll(',', '');
+                          final amount = double.tryParse(cleanText);
+                          if (amount != null && amount > 0) {
+                            widget.onAddTransaction(
+                              Transaction(
+                                amount: amount,
+                                isIncome: isIncome,
+                                date: DateTime.now(),
+                              ),
+                            );
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text('Add'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -1212,4 +1462,35 @@ class GraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Custom formatter for thousands separator
+class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    final numericValue = newValue.text.replaceAll(',', '');
+
+    if (numericValue.isEmpty) {
+      return newValue;
+    }
+
+    final formattedValue = _formatWithCommas(numericValue);
+
+    return TextEditingValue(
+      text: formattedValue,
+      selection: TextSelection.collapsed(offset: formattedValue.length),
+    );
+  }
+
+  String _formatWithCommas(String value) {
+    final regex = RegExp(r'\B(?=(\d{3})+(?!\d))');
+    return value.replaceAllMapped(regex, (match) => ',');
+  }
 }
