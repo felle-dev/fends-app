@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:fends/widgets/home_widget_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -327,6 +330,7 @@ class _AppControllerState extends State<AppController> {
 
   Future<void> _saveData() async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.setBool('isOnboarded', _isOnboarded);
     await prefs.setString('currency', _currency);
     await prefs.setString('currencySymbol', _currencySymbol);
@@ -334,6 +338,20 @@ class _AppControllerState extends State<AppController> {
 
     if (_finalDate != null) {
       await prefs.setString('finalDate', _finalDate!.toIso8601String());
+    }
+
+    if (_isOnboarded && _accounts.isNotEmpty) {
+      final currentBalance =
+          _totalBudget +
+          _transactions.fold<double>(
+            0.0,
+            (sum, t) => sum + (t.isIncome ? t.amount : -t.amount),
+          );
+
+      await HomeWidgetHelper.updateBalance(
+        balance: currentBalance,
+        currencySymbol: _currencySymbol,
+      );
     }
 
     await prefs.setString(
@@ -451,21 +469,25 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   ];
 
   void _nextPage() {
-    if (_currentPage < 4) {
+    if (_currentPage < 3) {
+      // CHANGE: 4 to 3
       _pageController.animateToPage(
         _currentPage + 1,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      if (_selectedDate != null &&
-          _budgetController.text.isNotEmpty &&
-          _accounts.isNotEmpty) {
-        final cleanText = _budgetController.text.replaceAll(',', '');
+      if (_selectedDate != null && _accounts.isNotEmpty) {
+        // CALCULATE total budget from accounts
+        final totalBudget = _accounts.fold<double>(
+          0.0,
+          (sum, account) => sum + account.initialBalance,
+        );
+
         widget.onComplete(
           _selectedCurrency,
           _selectedSymbol,
-          double.parse(cleanText),
+          totalBudget, // AUTO-CALCULATED
           _selectedDate!,
           _accounts,
         );
@@ -488,14 +510,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 0:
       case 1:
         return true;
-      case 2:
-        final cleanText = _budgetController.text.replaceAll(',', '');
-        return cleanText.isNotEmpty &&
-            double.tryParse(cleanText) != null &&
-            double.parse(cleanText) > 0;
-      case 3:
+      case 2: // Date page (was case 3)
         return _selectedDate != null;
-      case 4:
+      case 3: // Accounts page (was case 4)
         return _accounts.isNotEmpty;
       default:
         return false;
@@ -539,7 +556,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 children: [
                   _buildWelcomePage(theme),
                   _buildCurrencyPage(theme),
-                  _buildBudgetPage(theme),
                   _buildDatePage(theme),
                   _buildAccountsPage(theme),
                 ],
@@ -573,7 +589,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text(_currentPage == 4 ? 'Get Started' : 'Next'),
+                      child: Text(_currentPage == 3 ? 'Get Started' : 'Next'),
                     ),
                   ),
                 ],
@@ -908,7 +924,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Add at least one account to continue',
+            'Your total budget will be the sum of all account balances', // NEW TEXT
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -1338,6 +1354,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return formatter.format(amount);
   }
 
+  String get _currentTitle {
+    switch (_navIndex) {
+      case 0:
+        return 'Overview';
+      case 1:
+        return 'Accounts';
+      case 2:
+        return 'Transactions';
+      case 3:
+        return 'Settings';
+      default:
+        return 'Fends';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1345,7 +1376,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Fends'),
+        title: Text(_currentTitle),
         centerTitle: false,
         actions: [
           IconButton(
@@ -1387,33 +1418,80 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildOverviewTab(theme),
           _buildAccountsTab(theme),
           _buildTransactionsTab(theme),
+          _buildSettingsTab(theme),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: (index) => setState(() => _navIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Overview',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Accounts',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Transactions',
-          ),
-        ],
+      extendBody: true,
+      floatingActionButton: Container(
+        decoration: BoxDecoration(shape: BoxShape.circle),
+        child: FloatingActionButton(
+          onPressed: () => _showAddTransactionDialog(context),
+          elevation: 0,
+          child: const Icon(Icons.add),
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTransactionDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Transaction'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            width: 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: NavigationBar(
+                selectedIndex: _navIndex < 2 ? _navIndex : _navIndex + 1,
+                onDestinationSelected: (index) {
+                  if (index == 2) {
+                    _showAddTransactionDialog(context);
+                  } else if (index < 2) {
+                    setState(() => _navIndex = index);
+                  } else {
+                    setState(() => _navIndex = index - 1);
+                  }
+                },
+                elevation: 0,
+                height: 56,
+                backgroundColor: Colors.transparent,
+                indicatorColor: theme.colorScheme.primaryContainer,
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+                destinations: [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home),
+                    label: 'Overview',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.account_balance_wallet_outlined),
+                    selectedIcon: Icon(Icons.account_balance_wallet),
+                    label: 'Accounts',
+                  ),
+                  NavigationDestination(icon: SizedBox(width: 48), label: ''),
+                  NavigationDestination(
+                    icon: Icon(Icons.receipt_long_outlined),
+                    selectedIcon: Icon(Icons.receipt_long),
+                    label: 'Transactions',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.settings_outlined),
+                    selectedIcon: Icon(Icons.settings),
+                    label: 'Settings',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1422,20 +1500,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildBalanceCard(theme),
+        _buildBalanceGraphCard(theme),
         const SizedBox(height: 24),
         Text(
-          'Spending Allowance',
+          'Balance Trend',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 12),
-        _buildAllowanceSelector(theme),
-        const SizedBox(height: 12),
-        _buildAllowanceCard(theme),
-        const SizedBox(height: 24),
-        _buildGraphCard(theme),
+        _buildBalanceTrendCard(theme),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
         const SizedBox(height: 100),
@@ -1443,12 +1517,39 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBalanceCard(ThemeData theme) {
+  Widget _buildBalanceTrendCard(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surface,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: SizedBox(
+          height: 200,
+          child: BudgetGraph(
+            totalBudget: widget.totalBudget,
+            transactions: widget.transactions,
+            finalDate: widget.finalDate,
+            colorScheme: theme.colorScheme,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceGraphCard(ThemeData theme) {
     final progress = widget.totalBudget > 0
         ? (_currentBalance / widget.totalBudget).clamp(0.0, 1.0)
         : 0.0;
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surface,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -1470,6 +1571,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer,
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      width: 1,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -1531,6 +1636,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 32),
+            Container(height: 1, color: theme.colorScheme.outlineVariant),
+            const SizedBox(height: 24),
+            Text(
+              'Spending Allowance',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildAllowanceItem(theme, 'Daily', _dailyAllowance, Icons.today),
+            const SizedBox(height: 16),
+            Container(height: 1, color: theme.colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            _buildAllowanceItem(
+              theme,
+              'Weekly',
+              _weeklyAllowance,
+              Icons.calendar_view_week,
+            ),
+            const SizedBox(height: 16),
+            Container(height: 1, color: theme.colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            _buildAllowanceItem(
+              theme,
+              'Monthly',
+              _monthlyAllowance,
+              Icons.calendar_month,
+            ),
           ],
         ),
       ),
@@ -1563,65 +1697,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAllowanceSelector(ThemeData theme) {
-    return SegmentedButton<int>(
-      segments: const [
-        ButtonSegment(value: 0, label: Text('Daily')),
-        ButtonSegment(value: 1, label: Text('Weekly')),
-        ButtonSegment(value: 2, label: Text('Monthly')),
-      ],
-      selected: {_selectedTab},
-      onSelectionChanged: (Set<int> selected) {
-        setState(() => _selectedTab = selected.first);
-      },
-    );
-  }
-
-  Widget _buildAllowanceCard(ThemeData theme) {
-    double allowance;
-    String period;
-
-    switch (_selectedTab) {
-      case 0:
-        allowance = _dailyAllowance;
-        period = 'day';
-        break;
-      case 1:
-        allowance = _weeklyAllowance;
-        period = 'week';
-        break;
-      case 2:
-        allowance = _monthlyAllowance;
-        period = 'month';
-        break;
-      default:
-        allowance = _dailyAllowance;
-        period = 'day';
-    }
-
-    return Card(
+  Widget _buildAllAllowancesCard(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surface,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Icon(
-              Icons.calendar_today,
-              size: 48,
-              color: theme.colorScheme.primary,
+            _buildAllowanceItem(theme, 'Daily', _dailyAllowance, Icons.today),
+            const SizedBox(height: 16),
+            Container(height: 1, color: theme.colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            _buildAllowanceItem(
+              theme,
+              'Weekly',
+              _weeklyAllowance,
+              Icons.calendar_view_week,
             ),
             const SizedBox(height: 16),
-            Text(
-              _formatCurrency(allowance),
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Available per $period',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            Container(height: 1, color: theme.colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            _buildAllowanceItem(
+              theme,
+              'Monthly',
+              _monthlyAllowance,
+              Icons.calendar_month,
             ),
           ],
         ),
@@ -1629,32 +1733,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildGraphCard(ThemeData theme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Balance Trend',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 200,
-              child: BudgetGraph(
-                totalBudget: widget.totalBudget,
-                transactions: widget.transactions,
-                finalDate: widget.finalDate,
-                colorScheme: theme.colorScheme,
-              ),
-            ),
-          ],
+  Widget _buildAllowanceItem(
+    ThemeData theme,
+    String period,
+    double amount,
+    IconData icon,
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.primary, width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 24),
         ),
-      ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                period,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _formatCurrency(amount),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1683,7 +1800,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Card(
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant,
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            color: theme.colorScheme.surface,
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1705,7 +1830,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: category.color.withOpacity(0.2),
+                              border: Border.all(
+                                color: category.color,
+                                width: 2,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -1764,6 +1892,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ACCOUNTS TAB
   Widget _buildAccountsTab(ThemeData theme) {
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -1771,12 +1900,6 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Accounts',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             FilledButton.icon(
               onPressed: () => _showAddAccountDialog(context),
               icon: const Icon(Icons.add, size: 20),
@@ -1794,7 +1917,15 @@ class _HomeScreenState extends State<HomeScreen> {
           final balance = _getAccountBalance(account.id);
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Card(
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant,
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                color: theme.colorScheme.surface,
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -1803,7 +1934,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: account.color.withOpacity(0.2),
+                        border: Border.all(color: account.color, width: 2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(account.icon, color: account.color),
@@ -1849,6 +1980,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // TRANSACTIONS TAB
   Widget _buildTransactionsTab(ThemeData theme) {
     final sortedTransactions = widget.transactions.toList()
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -1856,13 +1988,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text(
-          'Transactions',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 20),
         if (sortedTransactions.isEmpty)
           Center(
             child: Padding(
@@ -1896,7 +2021,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Card(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  color: theme.colorScheme.surface,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -1905,7 +2038,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: category.color.withOpacity(0.2),
+                          border: Border.all(color: category.color, width: 2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -1983,6 +2116,95 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }),
         const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  // SETTINGS TAB
+  Widget _buildSettingsTab(ThemeData theme) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant,
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            color: theme.colorScheme.surface,
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('About'),
+                trailing: Icon(Icons.chevron_right),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('About'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fends',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Version 1.0.0',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'A simple budgeting app for tracking expenses and income',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              Container(
+                height: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                color: theme.colorScheme.outlineVariant,
+              ),
+              ListTile(
+                leading: Icon(Icons.article_outlined),
+                title: Text('License'),
+                trailing: Icon(Icons.chevron_right),
+                onTap: () {
+                  showLicensePage(
+                    context: context,
+                    applicationName: 'Fends',
+                    applicationVersion: '1.0.0',
+                    applicationIcon: Icon(
+                      Icons.account_balance_wallet,
+                      size: 48,
+                      color: theme.colorScheme.primary,
+                    ),
+                    applicationLegalese: '© 2025 Fends',
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -2188,7 +2410,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showAddTransactionDialog(BuildContext context) {
     final amountController = TextEditingController();
-    final noteController = TextEditingController();
 
     bool isIncome = false;
     Account selectedAccount = widget.accounts.first;
@@ -2240,6 +2461,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   TextField(
                     controller: amountController,
+                    autofocus: true, // Add this line
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Amount',
@@ -2282,13 +2504,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: const InputDecoration(labelText: 'Category'),
                   ),
 
-                  const SizedBox(height: 12),
-
-                  TextField(
-                    controller: noteController,
-                    decoration: const InputDecoration(labelText: 'Note'),
-                  ),
-
                   const SizedBox(height: 24),
 
                   Row(
@@ -2318,7 +2533,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 date: DateTime.now(),
                                 accountId: selectedAccount.id,
                                 categoryId: selectedCategory.id,
-                                note: noteController.text,
+                                note: '', // Empty note since field is removed
                               ),
                             );
 

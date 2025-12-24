@@ -22,9 +22,6 @@ A simple budget management app
 - Minimum SDK: API 24 (Android 7.0)
 - Target SDK: API 34
 
-## Status
-This project is currently in development. It is not yet ready for use.
-
 ## Contributing
 Feel free to open issues or submit pull requests. All contributions are welcome!
 
