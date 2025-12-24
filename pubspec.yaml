@@ -37,6 +37,7 @@ dependencies:
   intl: ^0.20.2
   dynamic_color: ^1.8.1
   shared_preferences: ^2.5.4
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
