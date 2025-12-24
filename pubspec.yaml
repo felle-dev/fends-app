@@ -34,6 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  intl: ^0.20.2
+  dynamic_color: ^1.8.1
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +75,20 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  fonts:
+    - family: NoyhR
+      fonts:
+        - asset: assets/fonts/NoyhR-Regular.ttf
+        - asset: assets/fonts/NoyhR-Italic.ttf
+          style: italic
+        - asset: assets/fonts/NoyhR-Bold.ttf
+          weight: 700
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/Outfit-Regular.ttf
+        - asset: assets/fonts/Outfit-Bold.ttf
+          weight: 700
+ 
   # fonts:
   #   - family: Schyler
   #     fonts:
