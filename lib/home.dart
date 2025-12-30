@@ -142,39 +142,39 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(_currentTitle),
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Reset App',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Reset App?'),
-                  content: const Text(
-                    'This will delete all your data. Are you sure?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    FilledButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        widget.onReset();
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: theme.colorScheme.error,
-                      ),
-                      child: const Text('Reset'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.refresh),
+        //     tooltip: 'Reset App',
+        //     onPressed: () {
+        //       showDialog(
+        //         context: context,
+        //         builder: (context) => AlertDialog(
+        //           title: const Text('Reset App?'),
+        //           content: const Text(
+        //             'This will delete all your data. Are you sure?',
+        //           ),
+        //           actions: [
+        //             TextButton(
+        //               onPressed: () => Navigator.pop(context),
+        //               child: const Text('Cancel'),
+        //             ),
+        //             FilledButton(
+        //               onPressed: () {
+        //                 Navigator.pop(context);
+        //                 widget.onReset();
+        //               },
+        //               style: FilledButton.styleFrom(
+        //                 backgroundColor: theme.colorScheme.error,
+        //               ),
+        //               child: const Text('Reset'),
+        //             ),
+        //           ],
+        //         ),
+        //       );
+        //     },
+        //   ),
+        // ],
       ),
       body: IndexedStack(
         index: _navIndex,
