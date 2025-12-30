@@ -133,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -185,16 +185,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSettingsTab(theme),
         ],
       ),
-      extendBody: true,
-      floatingActionButton: Container(
-        decoration: BoxDecoration(shape: BoxShape.circle),
-        child: FloatingActionButton(
-          onPressed: () => _showAddTransactionDialog(context),
-          elevation: 0,
-          child: const Icon(Icons.add),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddTransactionDialog(context),
+        child: const Icon(Icons.add),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Container(
         margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
         decoration: BoxDecoration(
@@ -214,15 +208,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: NavigationBar(
-                selectedIndex: _navIndex < 2 ? _navIndex : _navIndex + 1,
+                selectedIndex: _navIndex,
                 onDestinationSelected: (index) {
-                  if (index == 2) {
-                    _showAddTransactionDialog(context);
-                  } else if (index < 2) {
-                    setState(() => _navIndex = index);
-                  } else {
-                    setState(() => _navIndex = index - 1);
-                  }
+                  setState(() => _navIndex = index);
                 },
                 elevation: 0,
                 height: 56,
@@ -240,7 +228,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     selectedIcon: Icon(Icons.account_balance_wallet),
                     label: 'Accounts',
                   ),
-                  NavigationDestination(icon: SizedBox(width: 48), label: ''),
                   NavigationDestination(
                     icon: Icon(Icons.receipt_long_outlined),
                     selectedIcon: Icon(Icons.receipt_long),
