@@ -218,8 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 56,
                 backgroundColor: Colors.transparent,
                 indicatorColor: theme.colorScheme.primaryContainer,
-                labelBehavior:
-                    NavigationDestinationLabelBehavior.alwaysHide,
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
                 destinations: [
                   NavigationDestination(
                     icon: Icon(Icons.home_outlined),
@@ -1277,12 +1276,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     : Colors.red,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Icon(
-                              Icons.more_vert,
-                              size: 16,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
+                            // const SizedBox(height: 4),
+                            // Icon(
+                            //   Icons.more_vert,
+                            //   size: 16,
+                            //   color: theme.colorScheme.onSurfaceVariant,
+                            // ),
                           ],
                         ),
                       ],
