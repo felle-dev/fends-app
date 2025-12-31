@@ -192,13 +192,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-            width: 1,
-          ),
+          // border: Border.all(
+          //   color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          //   width: 1,
+          // ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
@@ -253,9 +253,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildDailySpendingFocusCard(theme),
-        const SizedBox(height: 16),
         _buildBalanceGraphCard(theme),
+        const SizedBox(height: 16),
+        _buildDailySpendingFocusCard(theme),
         const SizedBox(height: 24),
         _buildAccountsOverviewCard(theme),
         const SizedBox(height: 24),
@@ -833,34 +833,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            Container(height: 1, color: theme.colorScheme.outlineVariant),
-            const SizedBox(height: 24),
-            Text(
-              'Spending Allowance',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildAllowanceItem(theme, 'Daily', _dailyAllowance, Icons.today),
-            const SizedBox(height: 16),
-            Container(height: 1, color: theme.colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            _buildAllowanceItem(
-              theme,
-              'Weekly',
-              _weeklyAllowance,
-              Icons.calendar_view_week,
-            ),
-            const SizedBox(height: 16),
-            Container(height: 1, color: theme.colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            _buildAllowanceItem(
-              theme,
-              'Monthly',
-              _monthlyAllowance,
-              Icons.calendar_month,
-            ),
           ],
         ),
       ),
