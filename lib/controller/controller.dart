@@ -250,7 +250,28 @@ class _AppControllerState extends State<AppController> {
       categories: _categories,
       onAddTransaction: _addTransaction,
       onAddAccount: _addAccount,
+      onDeleteTransaction: _deleteTransaction,
+      onUpdateTransaction: _updateTransaction,
       onReset: _resetApp,
     );
+  }
+
+  void _deleteTransaction(String transactionId) {
+    setState(() {
+      _transactions.removeWhere((t) => t.id == transactionId);
+    });
+    _saveData();
+  }
+
+  void _updateTransaction(Transaction updatedTransaction) {
+    setState(() {
+      final index = _transactions.indexWhere(
+        (t) => t.id == updatedTransaction.id,
+      );
+      if (index != -1) {
+        _transactions[index] = updatedTransaction;
+      }
+    });
+    _saveData();
   }
 }
