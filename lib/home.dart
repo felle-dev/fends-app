@@ -66,7 +66,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedTab = 0;
   int _navIndex = 0;
 
   double get _currentBalance {
@@ -89,6 +88,16 @@ class _HomeScreenState extends State<HomeScreen> {
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
+  double get _todaySpent {
+    final today = DateTime.now();
+    return widget.transactions
+        .where((t) => !t.isIncome && 
+               t.date.year == today.year &&
+               t.date.month == today.month &&
+               t.date.day == today.day)
+        .fold(0.0, (sum, t) => sum + t.amount);
+  }
+
   int get _daysLeft =>
       widget.finalDate.difference(DateTime.now()).inDays.clamp(1, 999999);
   int get _weeksLeft => (_daysLeft / 7).ceil();
@@ -99,6 +108,27 @@ class _HomeScreenState extends State<HomeScreen> {
       _weeksLeft > 0 ? _currentBalance / _weeksLeft : 0;
   double get _monthlyAllowance =>
       _monthsLeft > 0 ? _currentBalance / _monthsLeft : 0;
+
+  // Calculate average daily spending
+  double get _averageDailySpending {
+    if (widget.transactions.isEmpty) return 0;
+    
+    final earliestTransaction = widget.transactions
+        .reduce((a, b) => a.date.isBefore(b.date) ? a : b);
+    final daysSinceFirstTransaction = 
+        DateTime.now().difference(earliestTransaction.date).inDays + 1;
+    
+    return daysSinceFirstTransaction > 0 
+        ? _totalSpent / daysSinceFirstTransaction 
+        : 0;
+  }
+
+  // Estimate when budget runs out
+  DateTime? get _estimatedRunoutDate {
+    if (_averageDailySpending <= 0) return null;
+    final daysRemaining = _currentBalance / _averageDailySpending;
+    return DateTime.now().add(Duration(days: daysRemaining.floor()));
+  }
 
   double _getAccountBalance(String accountId) {
     final account = widget.accounts.firstWhere((a) => a.id == accountId);
@@ -133,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -142,39 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(_currentTitle),
         centerTitle: false,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.refresh),
-        //     tooltip: 'Reset App',
-        //     onPressed: () {
-        //       showDialog(
-        //         context: context,
-        //         builder: (context) => AlertDialog(
-        //           title: const Text('Reset App?'),
-        //           content: const Text(
-        //             'This will delete all your data. Are you sure?',
-        //           ),
-        //           actions: [
-        //             TextButton(
-        //               onPressed: () => Navigator.pop(context),
-        //               child: const Text('Cancel'),
-        //             ),
-        //             FilledButton(
-        //               onPressed: () {
-        //                 Navigator.pop(context);
-        //                 widget.onReset();
-        //               },
-        //               style: FilledButton.styleFrom(
-        //                 backgroundColor: theme.colorScheme.error,
-        //               ),
-        //               child: const Text('Reset'),
-        //             ),
-        //           ],
-        //         ),
-        //       );
-        //     },
-        //   ),
-        // ],
       ),
       body: IndexedStack(
         index: _navIndex,
@@ -251,6 +248,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        _buildDailySpendingFocusCard(theme),
+        const SizedBox(height: 16),
+        _buildBudgetRunwayCard(theme),
+        const SizedBox(height: 16),
+        _buildAccountsOverviewCard(theme),
+        const SizedBox(height: 24),
         _buildBalanceGraphCard(theme),
         const SizedBox(height: 24),
         Text(
@@ -264,6 +267,447 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
         const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildDailySpendingFocusCard(ThemeData theme) {
+    final isOverBudget = _todaySpent > _dailyAllowance;
+    final difference = _todaySpent - _dailyAllowance;
+    
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isOverBudget 
+              ? Colors.red.withOpacity(0.5)
+              : theme.colorScheme.outlineVariant,
+          width: isOverBudget ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        color: isOverBudget 
+            ? Colors.red.withOpacity(0.05)
+            : theme.colorScheme.surface,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isOverBudget 
+                        ? Colors.red.withOpacity(0.1)
+                        : theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isOverBudget 
+                          ? Colors.red.withOpacity(0.3)
+                          : theme.colorScheme.outline.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    isOverBudget ? Icons.warning_rounded : Icons.today_rounded,
+                    color: isOverBudget 
+                        ? Colors.red 
+                        : theme.colorScheme.primary,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today\'s Spending',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        DateFormat('EEEE, MMM d').format(DateTime.now()),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _formatCurrency(_todaySpent),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isOverBudget ? Colors.red : null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'of ${_formatCurrency(_dailyAllowance)}',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: _dailyAllowance > 0 
+                    ? (_todaySpent / _dailyAllowance).clamp(0.0, 1.0)
+                    : 0.0,
+                minHeight: 8,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                color: isOverBudget ? Colors.red : theme.colorScheme.primary,
+              ),
+            ),
+            if (isOverBudget) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.red.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.priority_high_rounded,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You\'ve exceeded today\'s budget by ${_formatCurrency(difference.abs())}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.red.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (_todaySpent > _dailyAllowance * 0.8) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'You have ${_formatCurrency(_dailyAllowance - _todaySpent)} left for today',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.orange.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBudgetRunwayCard(ThemeData theme) {
+    final runoutDate = _estimatedRunoutDate;
+    final daysUntilRunout = runoutDate != null 
+        ? runoutDate.difference(DateTime.now()).inDays 
+        : null;
+    
+    final willRunOutBeforeFinalDate = runoutDate != null && 
+        runoutDate.isBefore(widget.finalDate);
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: willRunOutBeforeFinalDate 
+              ? Colors.orange.withOpacity(0.5)
+              : theme.colorScheme.outlineVariant,
+          width: willRunOutBeforeFinalDate ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        color: willRunOutBeforeFinalDate 
+            ? Colors.orange.withOpacity(0.05)
+            : theme.colorScheme.surface,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: willRunOutBeforeFinalDate
+                        ? Colors.orange.withOpacity(0.1)
+                        : theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: willRunOutBeforeFinalDate
+                          ? Colors.orange.withOpacity(0.3)
+                          : theme.colorScheme.outline.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    willRunOutBeforeFinalDate 
+                        ? Icons.warning_amber_rounded 
+                        : Icons.trending_up_rounded,
+                    color: willRunOutBeforeFinalDate 
+                        ? Colors.orange 
+                        : theme.colorScheme.secondary,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Budget Runway',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            if (_averageDailySpending > 0 && runoutDate != null) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Estimated Runout',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('MMM d, yyyy').format(runoutDate),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: willRunOutBeforeFinalDate 
+                                ? Colors.orange 
+                                : theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'in $daysUntilRunout days',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 60,
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Avg. Daily Spend',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatCurrency(_averageDailySpending),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (willRunOutBeforeFinalDate) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.priority_high_rounded,
+                        color: Colors.orange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Budget may run out ${widget.finalDate.difference(runoutDate).inDays} days before your target date',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ] else ...[
+              Text(
+                'Not enough data to estimate',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Add more transactions to see budget runway',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountsOverviewCard(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Accounts',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton(
+              onPressed: () => setState(() => _navIndex = 1),
+              child: const Text('View All'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...widget.accounts.take(3).map((account) {
+          final balance = _getAccountBalance(account.id);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant,
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                color: theme.colorScheme.surface,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: account.color, width: 2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        account.icon, 
+                        color: account.color,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            account.name,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            account.type.toString().split('.').last.toUpperCase(),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      _formatCurrency(balance),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: balance >= 0 ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
       ],
     );
   }
@@ -445,42 +889,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildAllAllowancesCard(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surface,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _buildAllowanceItem(theme, 'Daily', _dailyAllowance, Icons.today),
-            const SizedBox(height: 16),
-            Container(height: 1, color: theme.colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            _buildAllowanceItem(
-              theme,
-              'Weekly',
-              _weeklyAllowance,
-              Icons.calendar_view_week,
-            ),
-            const SizedBox(height: 16),
-            Container(height: 1, color: theme.colorScheme.outlineVariant),
-            const SizedBox(height: 16),
-            _buildAllowanceItem(
-              theme,
-              'Monthly',
-              _monthlyAllowance,
-              Icons.calendar_month,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1212,7 +1620,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   TextField(
                     controller: amountController,
-                    autofocus: true, // Add this line
+                    autofocus: true,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Amount',
@@ -1284,7 +1692,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 date: DateTime.now(),
                                 accountId: selectedAccount.id,
                                 categoryId: selectedCategory.id,
-                                note: '', // Empty note since field is removed
+                                note: '',
                               ),
                             );
 
