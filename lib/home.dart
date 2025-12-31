@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(0.7),
+                color: theme.colorScheme.surface.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: NavigationBar(
@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Colors.transparent,
                 indicatorColor: theme.colorScheme.primaryContainer,
                 labelBehavior:
-                    NavigationDestinationLabelBehavior.onlyShowSelected,
+                    NavigationDestinationLabelBehavior.alwaysHide,
                 destinations: [
                   NavigationDestination(
                     icon: Icon(Icons.home_outlined),
@@ -270,9 +270,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildBalanceTrendCard(theme),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
-        const SizedBox(height: 100),
+        const SizedBox(height: 24),
         _buildBudgetRunwayCard(theme),
-        const SizedBox(height: 16),
+        const SizedBox(height: 100),
       ],
     );
   }
