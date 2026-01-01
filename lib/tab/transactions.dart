@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,14 @@ class TransactionsTab extends StatelessWidget {
       locale: currency == 'IDR' ? 'id_ID' : 'en_US',
     );
     return formatter.format(amount);
+  }
+
+  bool _isTransferTransaction(Transaction transaction) {
+    final category = categories.firstWhere(
+      (c) => c.id == transaction.categoryId,
+      orElse: () => categories.first,
+    );
+    return category.name == 'Transfer';
   }
 
   @override
@@ -71,6 +80,7 @@ class TransactionsTab extends StatelessWidget {
             final account = accounts.firstWhere(
               (a) => a.id == transaction.accountId,
             );
+            final isTransfer = _isTransferTransaction(transaction);
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -95,12 +105,19 @@ class TransactionsTab extends StatelessWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            border: Border.all(color: category.color, width: 2),
+                            border: Border.all(
+                              color: isTransfer
+                                  ? theme.colorScheme.primary
+                                  : category.color,
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            category.icon,
-                            color: category.color,
+                            isTransfer ? Icons.swap_horiz : category.icon,
+                            color: isTransfer
+                                ? theme.colorScheme.primary
+                                : category.color,
                             size: 20,
                           ),
                         ),
@@ -110,7 +127,7 @@ class TransactionsTab extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                category.name,
+                                isTransfer ? 'Transfer' : category.name,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -161,9 +178,11 @@ class TransactionsTab extends StatelessWidget {
                           '${transaction.isIncome ? '+' : '-'}${_formatCurrency(transaction.amount)}',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: transaction.isIncome
-                                ? Colors.green
-                                : Colors.red,
+                            color: isTransfer
+                                ? theme.colorScheme.primary
+                                : (transaction.isIncome
+                                      ? Colors.green
+                                      : Colors.red),
                           ),
                         ),
                       ],
@@ -186,46 +205,50 @@ class TransactionsTab extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(2),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: Icon(Icons.edit, color: theme.colorScheme.primary),
-                title: const Text('Edit Transaction'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showEditTransactionDialog(context, transaction);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete, color: theme.colorScheme.error),
-                title: const Text('Delete Transaction'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteConfirmationDialog(context, transaction);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('Cancel'),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
+                ListTile(
+                  leading: Icon(Icons.edit, color: theme.colorScheme.primary),
+                  title: const Text('Edit Transaction'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showEditTransactionDialog(context, transaction);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.delete, color: theme.colorScheme.error),
+                  title: const Text('Delete Transaction'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showDeleteConfirmationDialog(context, transaction);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.close),
+                  title: const Text('Cancel'),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -329,10 +352,14 @@ class TransactionsTab extends StatelessWidget {
     );
     final noteController = TextEditingController(text: transaction.note);
 
-    bool isIncome = transaction.isIncome;
+    bool isTransfer = _isTransferTransaction(transaction);
+    String transactionType = isTransfer
+        ? 'transfer'
+        : (transaction.isIncome ? 'income' : 'expense');
     Account selectedAccount = accounts.firstWhere(
       (a) => a.id == transaction.accountId,
     );
+    Account? selectedToAccount;
     Category selectedCategory = categories.firstWhere(
       (c) => c.id == transaction.categoryId,
     );
@@ -340,86 +367,255 @@ class TransactionsTab extends StatelessWidget {
 
     final theme = Theme.of(context);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+        builder: (context, setDialogState) => Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                          0.4,
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   Text(
                     'Edit Transaction',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  SegmentedButton<bool>(
+                  const SizedBox(height: 24),
+
+                  // Type selector
+                  SegmentedButton<String>(
                     segments: const [
-                      ButtonSegment(value: false, label: Text('Expense')),
-                      ButtonSegment(value: true, label: Text('Income')),
+                      ButtonSegment(
+                        value: 'expense',
+                        label: Text('Expense'),
+                        icon: Icon(Icons.remove_circle_outline),
+                      ),
+                      ButtonSegment(
+                        value: 'income',
+                        label: Text('Income'),
+                        icon: Icon(Icons.add_circle_outline),
+                      ),
+                      ButtonSegment(
+                        value: 'transfer',
+                        label: Text('Transfer'),
+                        icon: Icon(Icons.swap_horiz),
+                      ),
                     ],
-                    selected: {isIncome},
+                    selected: {transactionType},
                     onSelectionChanged: (v) {
                       setDialogState(() {
-                        isIncome = v.first;
-                        final matchingCategories = categories.where(
-                          (c) => c.isExpense != isIncome,
-                        );
-                        if (matchingCategories.isNotEmpty) {
-                          selectedCategory = matchingCategories.first;
+                        transactionType = v.first;
+                        if (transactionType != 'transfer') {
+                          selectedCategory = categories.firstWhere(
+                            (c) => c.isExpense != (transactionType == 'income'),
+                          );
                         }
                       });
                     },
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Amount',
-                      prefixText: '$currencySymbol ',
+                  const SizedBox(height: 32),
+
+                  // Amount input - Primary focus
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer.withOpacity(
+                        0.3,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        width: 2,
+                      ),
                     ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      _ThousandsSeparatorInputFormatter(),
-                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Amount',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: amountController,
+                          autofocus: false,
+                          keyboardType: TextInputType.number,
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: '0',
+                            hintStyle: theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withOpacity(0.3),
+                            ),
+                            prefixText: '$currencySymbol ',
+                            prefixStyle: theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            _ThousandsSeparatorInputFormatter(),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
+
+                  // Account selector (From account for transfer)
                   DropdownButtonFormField<Account>(
                     value: selectedAccount,
                     items: accounts
                         .map(
-                          (a) =>
-                              DropdownMenuItem(value: a, child: Text(a.name)),
+                          (a) => DropdownMenuItem(
+                            value: a,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.account_balance_wallet,
+                                  size: 20,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(a.name),
+                              ],
+                            ),
+                          ),
                         )
                         .toList(),
                     onChanged: (v) =>
                         setDialogState(() => selectedAccount = v!),
-                    decoration: const InputDecoration(labelText: 'Account'),
+                    decoration: InputDecoration(
+                      labelText: transactionType == 'transfer'
+                          ? 'From Account'
+                          : 'Account',
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<Category>(
-                    value: selectedCategory,
-                    items: categories
-                        .where((c) => c.isExpense != isIncome)
-                        .map(
-                          (c) =>
-                              DropdownMenuItem(value: c, child: Text(c.name)),
-                        )
-                        .toList(),
-                    onChanged: (v) =>
-                        setDialogState(() => selectedCategory = v!),
-                    decoration: const InputDecoration(labelText: 'Category'),
-                  ),
-                  const SizedBox(height: 12),
+
+                  // To Account selector (only for transfer)
+                  if (transactionType == 'transfer') ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<Account>(
+                      value: selectedToAccount,
+                      items: accounts
+                          .where((a) => a.id != selectedAccount.id)
+                          .map(
+                            (a) => DropdownMenuItem(
+                              value: a,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet,
+                                    size: 20,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(a.name),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setDialogState(() => selectedToAccount = v),
+                      decoration: InputDecoration(
+                        labelText: 'To Account',
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Category selector (not shown for transfer)
+                  if (transactionType != 'transfer') ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<Category>(
+                      value: selectedCategory,
+                      items: categories
+                          .where(
+                            (c) => c.isExpense != (transactionType == 'income'),
+                          )
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.category,
+                                    size: 20,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(c.name),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setDialogState(() => selectedCategory = v!),
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+
+                  // Date picker
                   InkWell(
                     onTap: () async {
                       final picked = await showDatePicker(
@@ -433,32 +629,57 @@ class TransactionsTab extends StatelessWidget {
                       }
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Date',
-                        suffixIcon: Icon(Icons.calendar_today),
+                        suffixIcon: const Icon(Icons.calendar_today),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                       child: Text(DateFormat('MMM d, y').format(selectedDate)),
                     ),
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(height: 16),
+
+                  // Note input
                   TextField(
                     controller: noteController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Note (optional)',
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     maxLines: 2,
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 32),
+
+                  // Action buttons
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: const Text('Cancel'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
+                        flex: 2,
                         child: FilledButton(
                           onPressed: () {
                             final clean = amountController.text.replaceAll(
@@ -471,7 +692,7 @@ class TransactionsTab extends StatelessWidget {
                               Transaction(
                                 id: transaction.id,
                                 amount: double.parse(clean),
-                                isIncome: isIncome,
+                                isIncome: transactionType == 'income',
                                 date: selectedDate,
                                 accountId: selectedAccount.id,
                                 categoryId: selectedCategory.id,
@@ -481,11 +702,18 @@ class TransactionsTab extends StatelessWidget {
 
                             Navigator.pop(context);
                           },
-                          child: const Text('Save'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Save Changes'),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
