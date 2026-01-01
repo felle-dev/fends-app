@@ -39,6 +39,8 @@ dependencies:
   shared_preferences: ^2.5.4
   flutter_launcher_icons: ^0.14.4
   home_widget: ^0.8.1
+  file_picker: ^10.3.8
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:

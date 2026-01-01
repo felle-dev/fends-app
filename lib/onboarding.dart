@@ -75,9 +75,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 1:
         return true;
       case 2: // Date page (was case 3)
-        return _selectedDate != null;
-      case 3: // Accounts page (was case 4)
         return _accounts.isNotEmpty;
+      case 3: // Accounts page (was case 4)
+        return _selectedDate != null;
       default:
         return false;
     }
@@ -120,8 +120,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 children: [
                   _buildWelcomePage(theme),
                   _buildCurrencyPage(theme),
-                  _buildDatePage(theme),
                   _buildAccountsPage(theme),
+                  _buildDatePage(theme),
                 ],
               ),
             ),

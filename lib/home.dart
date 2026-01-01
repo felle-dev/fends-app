@@ -18,8 +18,11 @@ class HomeScreen extends StatefulWidget {
   final Function(Transaction) onAddTransaction;
   final Function(Account) onAddAccount;
   final Function(String) onDeleteTransaction;
+  final Function(String) onDeleteAccount;
   final Function(Transaction) onUpdateTransaction;
   final VoidCallback onReset;
+  final Future<String> Function() onExportData;
+  final Future<void> Function(String) onImportData;
 
   const HomeScreen({
     super.key,
@@ -33,8 +36,11 @@ class HomeScreen extends StatefulWidget {
     required this.onAddTransaction,
     required this.onAddAccount,
     required this.onDeleteTransaction,
+    required this.onDeleteAccount,
     required this.onUpdateTransaction,
     required this.onReset,
+    required this.onExportData,
+    required this.onImportData,
   });
 
   @override
@@ -111,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
             transactions: widget.transactions,
             accounts: widget.accounts,
             onAddAccount: widget.onAddAccount,
+            onDeleteAccount: widget.onDeleteAccount,
           ),
           TransactionsTab(
             currency: widget.currency,
@@ -121,13 +128,19 @@ class _HomeScreenState extends State<HomeScreen> {
             onDeleteTransaction: widget.onDeleteTransaction,
             onUpdateTransaction: widget.onUpdateTransaction,
           ),
-          SettingsTab(),
+          SettingsTab(
+            onExportData: widget.onExportData,
+            onImportData: (jsonData) async =>
+                await widget.onImportData(jsonData),
+            onReset: widget.onReset,
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTransactionDialog(context),
         child: const Icon(Icons.add),
       ),
+      extendBody: true,
       bottomNavigationBar: Container(
         margin: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
         decoration: BoxDecoration(

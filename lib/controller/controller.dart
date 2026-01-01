@@ -135,6 +135,13 @@ class _AppControllerState extends State<AppController> {
       ),
       Category(
         id: '10',
+        name: 'Transfer',
+        icon: Icons.swap_horiz,
+        color: Colors.blueGrey,
+        isExpense: true,
+      ),
+      Category(
+        id: '11',
         name: 'Other',
         icon: Icons.more_horiz,
         color: Colors.grey,
@@ -215,6 +222,36 @@ class _AppControllerState extends State<AppController> {
     _saveData();
   }
 
+  void _deleteAccount(String accountId) {
+    setState(() {
+      // Remove the account
+      _accounts.removeWhere((a) => a.id == accountId);
+
+      // Remove all transactions associated with this account
+      _transactions.removeWhere((t) => t.accountId == accountId);
+    });
+    _saveData();
+  }
+
+  void _deleteTransaction(String transactionId) {
+    setState(() {
+      _transactions.removeWhere((t) => t.id == transactionId);
+    });
+    _saveData();
+  }
+
+  void _updateTransaction(Transaction updatedTransaction) {
+    setState(() {
+      final index = _transactions.indexWhere(
+        (t) => t.id == updatedTransaction.id,
+      );
+      if (index != -1) {
+        _transactions[index] = updatedTransaction;
+      }
+    });
+    _saveData();
+  }
+
   void _resetApp() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -228,6 +265,60 @@ class _AppControllerState extends State<AppController> {
       _accounts = [];
       _categories = _getDefaultCategories();
     });
+  }
+
+  Future<String> _exportData() async {
+    final data = {
+      'version': '1.0',
+      'exportDate': DateTime.now().toIso8601String(),
+      'currency': _currency,
+      'currencySymbol': _currencySymbol,
+      'totalBudget': _totalBudget,
+      'finalDate': _finalDate?.toIso8601String(),
+      'transactions': _transactions.map((e) => e.toJson()).toList(),
+      'accounts': _accounts.map((e) => e.toJson()).toList(),
+      'categories': _categories.map((e) => e.toJson()).toList(),
+    };
+    return json.encode(data);
+  }
+
+  Future<void> _importData(String jsonString) async {
+    try {
+      final data = json.decode(jsonString) as Map<String, dynamic>;
+
+      setState(() {
+        _currency = data['currency'] ?? 'IDR';
+        _currencySymbol = data['currencySymbol'] ?? 'Rp';
+        _totalBudget = (data['totalBudget'] ?? 0).toDouble();
+
+        if (data['finalDate'] != null) {
+          _finalDate = DateTime.parse(data['finalDate']);
+        }
+
+        if (data['transactions'] != null) {
+          final List<dynamic> transactionsJson = data['transactions'];
+          _transactions = transactionsJson
+              .map((e) => Transaction.fromJson(e))
+              .toList();
+        }
+
+        if (data['accounts'] != null) {
+          final List<dynamic> accountsJson = data['accounts'];
+          _accounts = accountsJson.map((e) => Account.fromJson(e)).toList();
+        }
+
+        if (data['categories'] != null) {
+          final List<dynamic> categoriesJson = data['categories'];
+          _categories = categoriesJson
+              .map((e) => Category.fromJson(e))
+              .toList();
+        }
+      });
+
+      await _saveData();
+    } catch (e) {
+      throw Exception('Failed to import data: $e');
+    }
   }
 
   @override
@@ -251,27 +342,11 @@ class _AppControllerState extends State<AppController> {
       onAddTransaction: _addTransaction,
       onAddAccount: _addAccount,
       onDeleteTransaction: _deleteTransaction,
+      onDeleteAccount: _deleteAccount,
       onUpdateTransaction: _updateTransaction,
       onReset: _resetApp,
+      onExportData: _exportData,
+      onImportData: _importData,
     );
-  }
-
-  void _deleteTransaction(String transactionId) {
-    setState(() {
-      _transactions.removeWhere((t) => t.id == transactionId);
-    });
-    _saveData();
-  }
-
-  void _updateTransaction(Transaction updatedTransaction) {
-    setState(() {
-      final index = _transactions.indexWhere(
-        (t) => t.id == updatedTransaction.id,
-      );
-      if (index != -1) {
-        _transactions[index] = updatedTransaction;
-      }
-    });
-    _saveData();
   }
 }

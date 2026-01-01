@@ -13,12 +13,13 @@ class FendsWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray
     ) {
         appWidgetIds.forEach { widgetId ->
-            val views = RemoteViews(context.packageName, android.R.layout.simple_list_item_1)
+            val views = RemoteViews(context.packageName, R.layout.widget_balance)
             
             val prefs = HomeWidgetPlugin.getData(context)
             val balance = prefs.getString("balance", "$0")
             
-            views.setTextViewText(android.R.id.text1, balance)
+            views.setTextViewText(R.id.widget_balance, balance)
+            views.setTextViewText(R.id.widget_label, "Total Balance")
             
             appWidgetManager.updateAppWidget(widgetId, views)
         }
