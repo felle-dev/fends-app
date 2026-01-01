@@ -122,7 +122,7 @@ class OverviewTab extends StatelessWidget {
         _buildBalanceTrendCard(theme),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
         _buildBudgetRunwayCard(theme),
         const SizedBox(height: 100),
       ],
