@@ -196,8 +196,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showAddTransactionDialog(BuildContext context) {
     final amountController = TextEditingController();
 
-    bool isIncome = false;
+    String transactionType = 'expense'; // 'expense', 'income', 'transfer'
     Account selectedAccount = widget.accounts.first;
+    Account? selectedToAccount = widget.accounts.length > 1
+        ? widget.accounts[1]
+        : null;
     Category selectedCategory = widget.categories.firstWhere(
       (c) => c.isExpense,
     );
@@ -247,26 +250,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
 
                   // Type selector
-                  SegmentedButton<bool>(
+                  SegmentedButton<String>(
                     segments: const [
                       ButtonSegment(
-                        value: false,
+                        value: 'expense',
                         label: Text('Expense'),
                         icon: Icon(Icons.remove_circle_outline),
                       ),
                       ButtonSegment(
-                        value: true,
+                        value: 'income',
                         label: Text('Income'),
                         icon: Icon(Icons.add_circle_outline),
                       ),
+                      ButtonSegment(
+                        value: 'transfer',
+                        label: Text('Transfer'),
+                        icon: Icon(Icons.swap_horiz),
+                      ),
                     ],
-                    selected: {isIncome},
+                    selected: {transactionType},
                     onSelectionChanged: (v) {
                       setDialogState(() {
-                        isIncome = v.first;
-                        selectedCategory = widget.categories.firstWhere(
-                          (c) => c.isExpense != isIncome,
-                        );
+                        transactionType = v.first;
+                        if (transactionType != 'transfer') {
+                          selectedCategory = widget.categories.firstWhere(
+                            (c) => c.isExpense != (transactionType == 'income'),
+                          );
+                        }
                       });
                     },
                   ),
@@ -329,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Account selector
+                  // Account selector (From account for transfer)
                   DropdownButtonFormField<Account>(
                     value: selectedAccount,
                     items: widget.accounts
@@ -353,7 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     onChanged: (v) =>
                         setDialogState(() => selectedAccount = v!),
                     decoration: InputDecoration(
-                      labelText: 'Account',
+                      labelText: transactionType == 'transfer'
+                          ? 'From Account'
+                          : 'Account',
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
@@ -362,42 +374,84 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // Category selector
-                  DropdownButtonFormField<Category>(
-                    value: selectedCategory,
-                    items: widget.categories
-                        .where((c) => c.isExpense != isIncome)
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.category,
-                                  size: 20,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(c.name),
-                              ],
+                  // To Account selector (only for transfer)
+                  if (transactionType == 'transfer') ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<Account>(
+                      value: selectedToAccount,
+                      items: widget.accounts
+                          .where((a) => a.id != selectedAccount.id)
+                          .map(
+                            (a) => DropdownMenuItem(
+                              value: a,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet,
+                                    size: 20,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(a.name),
+                                ],
+                              ),
                             ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) =>
-                        setDialogState(() => selectedCategory = v!),
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setDialogState(() => selectedToAccount = v),
+                      decoration: InputDecoration(
+                        labelText: 'To Account',
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
+
+                  // Category selector (not shown for transfer)
+                  if (transactionType != 'transfer') ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<Category>(
+                      value: selectedCategory,
+                      items: widget.categories
+                          .where(
+                            (c) => c.isExpense != (transactionType == 'income'),
+                          )
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.category,
+                                    size: 20,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(c.name),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setDialogState(() => selectedCategory = v!),
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 32),
 
                   // Action buttons
@@ -426,18 +480,58 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                             if (clean.isEmpty) return;
 
-                            widget.onAddTransaction(
-                              Transaction(
-                                id: DateTime.now().millisecondsSinceEpoch
-                                    .toString(),
-                                amount: double.parse(clean),
-                                isIncome: isIncome,
-                                date: DateTime.now(),
-                                accountId: selectedAccount.id,
-                                categoryId: selectedCategory.id,
-                                note: '',
-                              ),
-                            );
+                            if (transactionType == 'transfer') {
+                              if (selectedToAccount == null) return;
+
+                              // Create two transactions for transfer
+                              final now = DateTime.now();
+                              final transferId = now.millisecondsSinceEpoch
+                                  .toString();
+
+                              // Outgoing transaction
+                              widget.onAddTransaction(
+                                Transaction(
+                                  id: '${transferId}_out',
+                                  amount: double.parse(clean),
+                                  isIncome: false,
+                                  date: now,
+                                  accountId: selectedAccount.id,
+                                  categoryId: widget.categories
+                                      .firstWhere((c) => c.name == 'Transfer')
+                                      .id,
+                                  note:
+                                      'Transfer to ${selectedToAccount!.name}',
+                                ),
+                              );
+
+                              // Incoming transaction
+                              widget.onAddTransaction(
+                                Transaction(
+                                  id: '${transferId}_in',
+                                  amount: double.parse(clean),
+                                  isIncome: true,
+                                  date: now,
+                                  accountId: selectedToAccount!.id,
+                                  categoryId: widget.categories
+                                      .firstWhere((c) => c.name == 'Transfer')
+                                      .id,
+                                  note: 'Transfer from ${selectedAccount.name}',
+                                ),
+                              );
+                            } else {
+                              widget.onAddTransaction(
+                                Transaction(
+                                  id: DateTime.now().millisecondsSinceEpoch
+                                      .toString(),
+                                  amount: double.parse(clean),
+                                  isIncome: transactionType == 'income',
+                                  date: DateTime.now(),
+                                  accountId: selectedAccount.id,
+                                  categoryId: selectedCategory.id,
+                                  note: '',
+                                ),
+                              );
+                            }
 
                             Navigator.pop(context);
                           },
