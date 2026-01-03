@@ -488,7 +488,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your total budget will be the sum of all account balances', // NEW TEXT
+            'Your total budget will be the sum of all account balances',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -573,6 +573,45 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                                   color: theme.colorScheme.primary,
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    _showEditAccountDialog(index);
+                                  } else if (value == 'delete') {
+                                    _showDeleteConfirmation(index);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit),
+                                        SizedBox(width: 12),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete),
+                                        SizedBox(width: 12),
+                                        Text('Delete'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -594,6 +633,241 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditAccountDialog(int index) {
+    final account = _accounts[index];
+    final nameController = TextEditingController(text: account.name);
+    final balanceController = TextEditingController(
+      text: NumberFormat('#,##0').format(account.initialBalance),
+    );
+    AccountType selectedType = account.type;
+    IconData selectedIcon = account.icon;
+    Color selectedColor = account.color;
+
+    final typeIcons = {
+      AccountType.wallet: Icons.account_balance_wallet,
+      AccountType.bank: Icons.account_balance,
+      AccountType.card: Icons.credit_card,
+      AccountType.savings: Icons.savings,
+      AccountType.investment: Icons.trending_up,
+    };
+
+    final colors = [
+      Colors.teal,
+      Colors.blue,
+      Colors.purple,
+      Colors.orange,
+      Colors.green,
+      Colors.pink,
+      Colors.red,
+      Colors.indigo,
+    ];
+
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Edit Account',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Account Name',
+                      hintText: 'e.g., My Wallet',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: balanceController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Initial Balance',
+                      hintText: '0',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixText: '$_selectedSymbol ',
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      _ThousandsSeparatorInputFormatter(),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Account Type',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    children: AccountType.values.map((type) {
+                      final isSelected = selectedType == type;
+                      return ChoiceChip(
+                        label: Text(
+                          type.toString().split('.').last.toUpperCase(),
+                        ),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setDialogState(() {
+                              selectedType = type;
+                              selectedIcon = typeIcons[type]!;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Color',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    children: colors.map((color) {
+                      final isSelected = selectedColor == color;
+                      return InkWell(
+                        onTap: () {
+                          setDialogState(() => selectedColor = color);
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: isSelected
+                                ? Border.all(
+                                    color: theme.colorScheme.primary,
+                                    width: 3,
+                                  )
+                                : null,
+                          ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 20,
+                                )
+                              : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            final cleanBalance = balanceController.text
+                                .replaceAll(',', '');
+                            if (nameController.text.isNotEmpty &&
+                                cleanBalance.isNotEmpty) {
+                              setState(() {
+                                _accounts[index] = Account(
+                                  id: account.id,
+                                  name: nameController.text,
+                                  type: selectedType,
+                                  initialBalance: double.parse(cleanBalance),
+                                  icon: selectedIcon,
+                                  color: selectedColor,
+                                );
+                              });
+                              Navigator.pop(context);
+                            }
+                          },
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(int index) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: const Text('Delete Account'),
+        content: Text(
+          'Are you sure you want to delete "${_accounts[index].name}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                _accounts.removeAt(index);
+              });
+              Navigator.pop(context);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+            ),
+            child: const Text('Delete'),
           ),
         ],
       ),

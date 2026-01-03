@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
 import 'package:fends/helper/graph.dart';
@@ -61,7 +62,60 @@ class OverviewTab extends StatelessWidget {
   int get _daysLeft =>
       finalDate.difference(DateTime.now()).inDays.clamp(1, 999999);
 
-  double get _dailyAllowance => _daysLeft > 0 ? _currentBalance / _daysLeft : 0;
+  double get _baseDailyAllowance =>
+      _daysLeft > 0 ? _currentBalance / _daysLeft : 0;
+
+  // Calculate rollover from previous days
+  double get _rolloverAmount {
+    if (transactions.isEmpty) return 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Get the earliest transaction or budget start date (whichever is more recent)
+    final earliestTransaction = transactions.isEmpty
+        ? today
+        : transactions.reduce((a, b) => a.date.isBefore(b.date) ? a : b).date;
+
+    final startDate = DateTime(
+      earliestTransaction.year,
+      earliestTransaction.month,
+      earliestTransaction.day,
+    );
+
+    // Don't calculate rollover if we just started
+    if (startDate.isAtSameMomentAs(today) || startDate.isAfter(today)) {
+      return 0;
+    }
+
+    double totalRollover = 0;
+    DateTime checkDate = startDate;
+
+    // Loop through each day from start to yesterday
+    while (checkDate.isBefore(today)) {
+      final dayTransactions = transactions.where((t) {
+        final tDate = DateTime(t.date.year, t.date.month, t.date.day);
+        return !t.isIncome && tDate.isAtSameMomentAs(checkDate);
+      });
+
+      final daySpent = dayTransactions.fold(0.0, (sum, t) => sum + t.amount);
+      final dayAllowance = _baseDailyAllowance;
+      final daySavings = dayAllowance - daySpent;
+
+      // Only add positive savings (didn't overspend)
+      if (daySavings > 0) {
+        totalRollover += daySavings;
+      }
+
+      checkDate = checkDate.add(const Duration(days: 1));
+    }
+
+    return totalRollover;
+  }
+
+  // Today's allowance including rollover
+  double get _dailyAllowanceWithRollover =>
+      _baseDailyAllowance + _rolloverAmount;
 
   double get _averageDailySpending {
     if (transactions.isEmpty) return 0;
@@ -260,8 +314,9 @@ class OverviewTab extends StatelessWidget {
   }
 
   Widget _buildDailySpendingFocusCard(ThemeData theme) {
-    final isOverBudget = _todaySpent > _dailyAllowance;
-    final difference = _todaySpent - _dailyAllowance;
+    final isOverBudget = _todaySpent > _dailyAllowanceWithRollover;
+    final difference = _todaySpent - _dailyAllowanceWithRollover;
+    final hasRollover = _rolloverAmount > 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -342,7 +397,7 @@ class OverviewTab extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
-                    'of ${_formatCurrency(_dailyAllowance)}',
+                    'of ${_formatCurrency(_dailyAllowanceWithRollover)}',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -354,14 +409,61 @@ class OverviewTab extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
-                value: _dailyAllowance > 0
-                    ? (_todaySpent / _dailyAllowance).clamp(0.0, 1.0)
+                value: _dailyAllowanceWithRollover > 0
+                    ? (_todaySpent / _dailyAllowanceWithRollover).clamp(
+                        0.0,
+                        1.0,
+                      )
                     : 0.0,
                 minHeight: 8,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 color: isOverBudget ? Colors.red : theme.colorScheme.primary,
               ),
             ),
+
+            // Show rollover bonus if exists
+            if (hasRollover && !isOverBudget) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.green.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.savings_outlined, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Rollover Bonus',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'You saved ${_formatCurrency(_rolloverAmount)} from previous days!',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             if (isOverBudget) ...[
               const SizedBox(height: 16),
               Container(
@@ -394,7 +496,7 @@ class OverviewTab extends StatelessWidget {
                   ],
                 ),
               ),
-            ] else if (_todaySpent > _dailyAllowance * 0.8) ...[
+            ] else if (_todaySpent > _dailyAllowanceWithRollover * 0.8) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -412,7 +514,7 @@ class OverviewTab extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'You have ${_formatCurrency(_dailyAllowance - _todaySpent)} left for today',
+                        'You have ${_formatCurrency(_dailyAllowanceWithRollover - _todaySpent)} left for today',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: Colors.orange.shade700,
                           fontWeight: FontWeight.w600,
@@ -421,6 +523,60 @@ class OverviewTab extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ],
+
+            // Show breakdown of base vs rollover
+            if (hasRollover) ...[
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Base Daily',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          _formatCurrency(_baseDailyAllowance),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.add,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Rollover',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.green,
+                          ),
+                        ),
+                        Text(
+                          _formatCurrency(_rolloverAmount),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ],

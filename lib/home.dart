@@ -4,6 +4,7 @@ import 'package:fends/tab/overview.dart';
 import 'package:fends/tab/settings.dart';
 import 'package:fends/tab/transactions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:fends/model.dart';
 
@@ -358,117 +359,207 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Account selector (From account for transfer)
-                  DropdownButtonFormField<Account>(
-                    value: selectedAccount,
-                    items: widget.accounts
-                        .map(
-                          (a) => DropdownMenuItem(
-                            value: a,
-                            child: Row(
+                  // Account selector with chips
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transactionType == 'transfer'
+                            ? 'From Account'
+                            : 'Account',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: widget.accounts.map((account) {
+                          final isSelected = selectedAccount.id == account.id;
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.account_balance_wallet,
-                                  size: 20,
-                                  color: theme.colorScheme.primary,
+                                  account.icon,
+                                  size: 16,
+                                  color: isSelected
+                                      ? theme.colorScheme.onSecondaryContainer
+                                      : account.color,
                                 ),
-                                const SizedBox(width: 12),
-                                Text(a.name),
+                                const SizedBox(width: 6),
+                                Text(account.name),
                               ],
                             ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) =>
-                        setDialogState(() => selectedAccount = v!),
-                    decoration: InputDecoration(
-                      labelText: transactionType == 'transfer'
-                          ? 'From Account'
-                          : 'Account',
-                      filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setDialogState(() => selectedAccount = account);
+                              }
+                            },
+                            backgroundColor: theme.colorScheme.surface,
+                            selectedColor: theme.colorScheme.secondaryContainer,
+                            checkmarkColor:
+                                theme.colorScheme.onSecondaryContainer,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? theme.colorScheme.secondary
+                                  : account.color.withOpacity(0.5),
+                              width: isSelected ? 2 : 1,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
+                    ],
                   ),
 
                   // To Account selector (only for transfer)
                   if (transactionType == 'transfer') ...[
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<Account>(
-                      value: selectedToAccount,
-                      items: widget.accounts
-                          .where((a) => a.id != selectedAccount.id)
-                          .map(
-                            (a) => DropdownMenuItem(
-                              value: a,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.account_balance_wallet,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(a.name),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => selectedToAccount = v),
-                      decoration: InputDecoration(
-                        labelText: 'To Account',
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'To Account',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: widget.accounts
+                              .where((a) => a.id != selectedAccount.id)
+                              .map((account) {
+                                final isSelected =
+                                    selectedToAccount?.id == account.id;
+                                return FilterChip(
+                                  selected: isSelected,
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        account.icon,
+                                        size: 16,
+                                        color: isSelected
+                                            ? theme
+                                                  .colorScheme
+                                                  .onSecondaryContainer
+                                            : account.color,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(account.name),
+                                    ],
+                                  ),
+                                  onSelected: (selected) {
+                                    setDialogState(() {
+                                      selectedToAccount = selected
+                                          ? account
+                                          : null;
+                                    });
+                                  },
+                                  backgroundColor: theme.colorScheme.surface,
+                                  selectedColor:
+                                      theme.colorScheme.secondaryContainer,
+                                  checkmarkColor:
+                                      theme.colorScheme.onSecondaryContainer,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? theme.colorScheme.secondary
+                                        : account.color.withOpacity(0.5),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ],
                     ),
                   ],
 
-                  // Category selector (not shown for transfer)
+                  // Category selector with chips (not shown for transfer)
                   if (transactionType != 'transfer') ...[
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<Category>(
-                      value: selectedCategory,
-                      items: widget.categories
-                          .where(
-                            (c) => c.isExpense != (transactionType == 'income'),
-                          )
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.category,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(c.name),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => selectedCategory = v!),
-                      decoration: InputDecoration(
-                        labelText: 'Category',
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Category',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: widget.categories
+                              .where(
+                                (c) =>
+                                    c.isExpense !=
+                                    (transactionType == 'income'),
+                              )
+                              .map((category) {
+                                final isSelected =
+                                    selectedCategory.id == category.id;
+                                return FilterChip(
+                                  selected: isSelected,
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        category.icon,
+                                        size: 16,
+                                        color: isSelected
+                                            ? theme
+                                                  .colorScheme
+                                                  .onSecondaryContainer
+                                            : category.color,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(category.name),
+                                    ],
+                                  ),
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setDialogState(
+                                        () => selectedCategory = category,
+                                      );
+                                    }
+                                  },
+                                  backgroundColor: theme.colorScheme.surface,
+                                  selectedColor:
+                                      theme.colorScheme.secondaryContainer,
+                                  checkmarkColor:
+                                      theme.colorScheme.onSecondaryContainer,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? theme.colorScheme.secondary
+                                        : category.color.withOpacity(0.5),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 32),
