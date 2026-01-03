@@ -23,6 +23,8 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onReset;
   final Future<String> Function() onExportData;
   final Future<void> Function(String) onImportData;
+  final bool? biometricEnabled;
+  final Function(bool)? onBiometricChanged;
 
   const HomeScreen({
     super.key,
@@ -41,6 +43,8 @@ class HomeScreen extends StatefulWidget {
     required this.onReset,
     required this.onExportData,
     required this.onImportData,
+    this.biometricEnabled,
+    this.onBiometricChanged,
   });
 
   @override
@@ -133,6 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onImportData: (jsonData) async =>
                 await widget.onImportData(jsonData),
             onReset: widget.onReset,
+            biometricEnabled: widget.biometricEnabled,
+            onBiometricChanged: widget.onBiometricChanged,
           ),
         ],
       ),

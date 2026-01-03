@@ -1,7 +1,9 @@
 import 'package:fends/onboarding.dart';
 import 'package:fends/widgets/home_widget_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:local_auth/local_auth.dart';
 import 'dart:convert';
 import 'package:fends/model.dart';
 import 'package:fends/home.dart';
@@ -23,6 +25,9 @@ class _AppControllerState extends State<AppController> {
   List<Account> _accounts = [];
   List<Category> _categories = [];
   bool _isLoading = true;
+  bool _biometricEnabled = false;
+  bool _isAuthenticated = false;
+  final LocalAuthentication _localAuth = LocalAuthentication();
 
   @override
   void initState() {
@@ -38,6 +43,7 @@ class _AppControllerState extends State<AppController> {
       _currency = prefs.getString('currency') ?? 'IDR';
       _currencySymbol = prefs.getString('currencySymbol') ?? 'Rp';
       _totalBudget = prefs.getDouble('totalBudget') ?? 0;
+      _biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
 
       final dateString = prefs.getString('finalDate');
       if (dateString != null) {
@@ -66,6 +72,79 @@ class _AppControllerState extends State<AppController> {
 
       _isLoading = false;
     });
+
+    // Trigger authentication if biometric is enabled
+    if (_biometricEnabled && _isOnboarded) {
+      _authenticateUser();
+    } else {
+      setState(() => _isAuthenticated = true);
+    }
+  }
+
+  Future<void> _authenticateUser() async {
+    if (kIsWeb || !_biometricEnabled) {
+      setState(() => _isAuthenticated = true);
+      return;
+    }
+
+    try {
+      final canAuth = await _localAuth.canCheckBiometrics;
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+
+      if (!canAuth || !isDeviceSupported) {
+        setState(() => _isAuthenticated = true);
+        return;
+      }
+
+      final authenticated = await _localAuth.authenticate(
+        localizedReason: 'Authenticate to access Fends',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+        ),
+      );
+
+      setState(() => _isAuthenticated = authenticated);
+
+      if (!authenticated) {
+        // If authentication fails, show retry dialog
+        _showAuthenticationFailedDialog();
+      }
+    } catch (e) {
+      // On error, allow access but show warning
+      setState(() => _isAuthenticated = true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Authentication error: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAuthenticationFailedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.lock_outline, color: Colors.red, size: 48),
+        title: const Text('Authentication Failed'),
+        content: const Text(
+          'You need to authenticate to access Fends. Please try again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _authenticateUser();
+            },
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 
   List<Category> _getDefaultCategories() {
@@ -190,6 +269,14 @@ class _AppControllerState extends State<AppController> {
     );
   }
 
+  Future<void> _saveBiometricPreference(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', value);
+    setState(() {
+      _biometricEnabled = value;
+    });
+  }
+
   void _completeOnboarding(
     String currency,
     String symbol,
@@ -264,6 +351,7 @@ class _AppControllerState extends State<AppController> {
       _transactions = [];
       _accounts = [];
       _categories = _getDefaultCategories();
+      _biometricEnabled = false;
     });
   }
 
@@ -331,6 +419,66 @@ class _AppControllerState extends State<AppController> {
       return OnboardingFlow(onComplete: _completeOnboarding);
     }
 
+    // Show authentication screen if biometric is enabled and not authenticated
+    if (_biometricEnabled && !_isAuthenticated) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Fends',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Authenticate to access your finances',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 64),
+                FilledButton.tonalIcon(
+                  onPressed: _authenticateUser,
+                  icon: const Icon(Icons.fingerprint),
+                  label: const Text('Authenticate'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return HomeScreen(
       currency: _currency,
       currencySymbol: _currencySymbol,
@@ -347,6 +495,8 @@ class _AppControllerState extends State<AppController> {
       onReset: _resetApp,
       onExportData: _exportData,
       onImportData: _importData,
+      biometricEnabled: _biometricEnabled,
+      onBiometricChanged: _saveBiometricPreference,
     );
   }
 }

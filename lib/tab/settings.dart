@@ -1,21 +1,127 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:local_auth/local_auth.dart';
 import 'dart:io';
 
-class SettingsTab extends StatelessWidget {
+class SettingsTab extends StatefulWidget {
   final Future<void> Function(String)? onImportData;
   final Future<String> Function()? onExportData;
   final VoidCallback? onReset;
+  final bool? biometricEnabled;
+  final Function(bool)? onBiometricChanged;
 
   const SettingsTab({
     super.key,
     this.onImportData,
     this.onExportData,
     this.onReset,
+    this.biometricEnabled,
+    this.onBiometricChanged,
   });
+
+  @override
+  State<SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<SettingsTab> {
+  final LocalAuthentication _localAuth = LocalAuthentication();
+  bool _biometricAvailable = false;
+  String _biometricType = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricAvailability();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    try {
+      if (kIsWeb) {
+        setState(() {
+          _biometricAvailable = false;
+        });
+        return;
+      }
+
+      final canAuth = await _localAuth.canCheckBiometrics;
+      final isDeviceSupported = await _localAuth.isDeviceSupported();
+
+      if (canAuth && isDeviceSupported) {
+        final availableBiometrics = await _localAuth.getAvailableBiometrics();
+        String type = 'Biometric';
+
+        if (availableBiometrics.contains(BiometricType.face)) {
+          type = 'Face ID';
+        } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+          type = 'Fingerprint';
+        } else if (availableBiometrics.contains(BiometricType.iris)) {
+          type = 'Iris';
+        }
+
+        setState(() {
+          _biometricAvailable = true;
+          _biometricType = type;
+        });
+      } else {
+        setState(() {
+          _biometricAvailable = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _biometricAvailable = false;
+      });
+    }
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (value) {
+      try {
+        final authenticated = await _localAuth.authenticate(
+          localizedReason: 'Authenticate to enable biometric lock',
+          options: const AuthenticationOptions(
+            stickyAuth: true,
+            biometricOnly: false,
+          ),
+        );
+
+        if (authenticated && mounted) {
+          widget.onBiometricChanged?.call(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$_biometricType authentication enabled'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Authentication failed: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } else {
+        widget.onBiometricChanged?.call(false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$_biometricType authentication disabled'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +130,69 @@ class SettingsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        // Security Section
+        if (_biometricAvailable) ...[
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant,
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              color: theme.colorScheme.surface,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.security_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Security',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                SwitchListTile(
+                  secondary: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.fingerprint,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  title: Text('$_biometricType Lock'),
+                  subtitle: Text(
+                    (widget.biometricEnabled ?? false)
+                        ? 'App is locked with $_biometricType'
+                        : 'Require $_biometricType to open app',
+                  ),
+                  value: widget.biometricEnabled ?? false,
+                  onChanged: widget.onBiometricChanged != null
+                      ? _toggleBiometric
+                      : null,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // Data Management Section
         Container(
           decoration: BoxDecoration(
@@ -282,8 +451,8 @@ class SettingsTab extends StatelessWidget {
                         FilledButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (onReset != null) {
-                              onReset!();
+                            if (widget.onReset != null) {
+                              widget.onReset!();
                             }
                           },
                           style: FilledButton.styleFrom(
@@ -306,7 +475,7 @@ class SettingsTab extends StatelessWidget {
 
   Future<void> _handleExport(BuildContext context) async {
     try {
-      if (onExportData == null) {
+      if (widget.onExportData == null) {
         _showErrorSnackBar(context, 'Export function not available');
         return;
       }
@@ -319,7 +488,7 @@ class SettingsTab extends StatelessWidget {
       );
 
       // Get the data from parent
-      final jsonData = await onExportData!();
+      final jsonData = await widget.onExportData!();
 
       // Close loading dialog
       if (context.mounted) Navigator.pop(context);
@@ -421,8 +590,8 @@ class SettingsTab extends StatelessWidget {
           );
 
           // Import the data
-          if (onImportData != null) {
-            await onImportData!(jsonString);
+          if (widget.onImportData != null) {
+            await widget.onImportData!(jsonString);
           }
 
           // Close loading
