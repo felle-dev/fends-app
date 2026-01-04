@@ -54,12 +54,6 @@ class OverviewTab extends StatelessWidget {
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
-  double get _totalIncome {
-    return transactions
-        .where((t) => t.isIncome)
-        .fold(0.0, (sum, t) => sum + t.amount);
-  }
-
   double get _todaySpent {
     final today = DateTime.now();
     return transactions
