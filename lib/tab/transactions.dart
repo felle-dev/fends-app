@@ -367,9 +367,7 @@ class TransactionsTab extends StatelessWidget {
       (a) => a.id == transaction.accountId,
     );
     Account? selectedToAccount;
-    Category selectedCategory = categories.firstWhere(
-      (c) => c.id == transaction.categoryId,
-    );
+    Category selectedCategory = _getCategoryById(transaction.categoryId);
     DateTime selectedDate = transaction.date;
 
     final theme = Theme.of(context);
@@ -506,121 +504,211 @@ class TransactionsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Account selector (From account for transfer)
-                  DropdownButtonFormField<Account>(
-                    value: selectedAccount,
-                    items: accounts
-                        .map(
-                          (a) => DropdownMenuItem(
-                            value: a,
-                            child: Row(
+                  // Account selector with chips
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transactionType == 'transfer'
+                            ? 'From Account'
+                            : 'Account',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: accounts.map((account) {
+                          final isSelected = selectedAccount.id == account.id;
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.account_balance_wallet,
-                                  size: 20,
-                                  color: theme.colorScheme.primary,
+                                  account.icon,
+                                  size: 16,
+                                  color: isSelected
+                                      ? theme.colorScheme.onSecondaryContainer
+                                      : account.color,
                                 ),
-                                const SizedBox(width: 12),
-                                Text(a.name),
+                                const SizedBox(width: 6),
+                                Text(account.name),
                               ],
                             ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) =>
-                        setDialogState(() => selectedAccount = v!),
-                    decoration: InputDecoration(
-                      labelText: transactionType == 'transfer'
-                          ? 'From Account'
-                          : 'Account',
-                      filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setDialogState(() => selectedAccount = account);
+                              }
+                            },
+                            backgroundColor: theme.colorScheme.surface,
+                            selectedColor: theme.colorScheme.secondaryContainer,
+                            checkmarkColor:
+                                theme.colorScheme.onSecondaryContainer,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? theme.colorScheme.secondary
+                                  : account.color.withOpacity(0.5),
+                              width: isSelected ? 2 : 1,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
+                    ],
                   ),
 
                   // To Account selector (only for transfer)
                   if (transactionType == 'transfer') ...[
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<Account>(
-                      value: selectedToAccount,
-                      items: accounts
-                          .where((a) => a.id != selectedAccount.id)
-                          .map(
-                            (a) => DropdownMenuItem(
-                              value: a,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.account_balance_wallet,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(a.name),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => selectedToAccount = v),
-                      decoration: InputDecoration(
-                        labelText: 'To Account',
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'To Account',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: accounts
+                              .where((a) => a.id != selectedAccount.id)
+                              .map((account) {
+                                final isSelected =
+                                    selectedToAccount?.id == account.id;
+                                return FilterChip(
+                                  selected: isSelected,
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        account.icon,
+                                        size: 16,
+                                        color: isSelected
+                                            ? theme
+                                                  .colorScheme
+                                                  .onSecondaryContainer
+                                            : account.color,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(account.name),
+                                    ],
+                                  ),
+                                  onSelected: (selected) {
+                                    setDialogState(() {
+                                      selectedToAccount = selected
+                                          ? account
+                                          : null;
+                                    });
+                                  },
+                                  backgroundColor: theme.colorScheme.surface,
+                                  selectedColor:
+                                      theme.colorScheme.secondaryContainer,
+                                  checkmarkColor:
+                                      theme.colorScheme.onSecondaryContainer,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? theme.colorScheme.secondary
+                                        : account.color.withOpacity(0.5),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ],
                     ),
                   ],
 
-                  // Category selector (not shown for transfer)
+                  // Category selector with chips (not shown for transfer)
                   if (transactionType != 'transfer') ...[
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<Category>(
-                      value: selectedCategory,
-                      items: categories
-                          .where(
-                            (c) => c.isExpense != (transactionType == 'income'),
-                          )
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.category,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(c.name),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) =>
-                          setDialogState(() => selectedCategory = v!),
-                      decoration: InputDecoration(
-                        labelText: 'Category',
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                    const SizedBox(height: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Category',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: categories
+                              .where(
+                                (c) =>
+                                    c.isExpense !=
+                                    (transactionType == 'income'),
+                              )
+                              .map((category) {
+                                final isSelected =
+                                    selectedCategory.id == category.id;
+                                return FilterChip(
+                                  selected: isSelected,
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        category.icon,
+                                        size: 16,
+                                        color: isSelected
+                                            ? theme
+                                                  .colorScheme
+                                                  .onSecondaryContainer
+                                            : category.color,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(category.name),
+                                    ],
+                                  ),
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setDialogState(
+                                        () => selectedCategory = category,
+                                      );
+                                    }
+                                  },
+                                  backgroundColor: theme.colorScheme.surface,
+                                  selectedColor:
+                                      theme.colorScheme.secondaryContainer,
+                                  checkmarkColor:
+                                      theme.colorScheme.onSecondaryContainer,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? theme.colorScheme.secondary
+                                        : category.color.withOpacity(0.5),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ],
                     ),
                   ],
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Date picker
                   InkWell(
@@ -635,18 +723,48 @@ class TransactionsTab extends StatelessWidget {
                         setDialogState(() => selectedDate = picked);
                       }
                     },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Date',
-                        suffixIcon: const Icon(Icons.calendar_today),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(DateFormat('MMM d, y').format(selectedDate)),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            color: theme.colorScheme.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Date',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  DateFormat(
+                                    'EEEE, MMM d, y',
+                                  ).format(selectedDate),
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -662,6 +780,10 @@ class TransactionsTab extends StatelessWidget {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.note_outlined,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                     maxLines: 2,
@@ -708,6 +830,13 @@ class TransactionsTab extends StatelessWidget {
                             );
 
                             Navigator.pop(context);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Transaction updated'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
                           },
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
