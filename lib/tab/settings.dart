@@ -142,6 +142,7 @@ class _SettingsTabState extends State<SettingsTab> {
         // Security Section
         if (_biometricAvailable) ...[
           Container(
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               border: Border.all(
                 color: theme.colorScheme.outlineVariant,
@@ -205,6 +206,7 @@ class _SettingsTabState extends State<SettingsTab> {
         // Categories Management Section
         if (widget.categories != null) ...[
           Container(
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               border: Border.all(
                 color: theme.colorScheme.outlineVariant,
@@ -261,6 +263,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
         // Data Management Section
         Container(
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             border: Border.all(
               color: theme.colorScheme.outlineVariant,
@@ -332,6 +335,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
         // App Information Section
         Container(
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             border: Border.all(
               color: theme.colorScheme.outlineVariant,
@@ -454,6 +458,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
         // Danger Zone Section
         Container(
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
             borderRadius: BorderRadius.circular(16),
@@ -667,6 +672,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         border: Border.all(color: category.color.withOpacity(0.3), width: 1),
         borderRadius: BorderRadius.circular(12),
