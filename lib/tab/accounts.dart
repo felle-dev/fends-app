@@ -90,19 +90,6 @@ class AccountsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        // Add Account Button
-        FilledButton.icon(
-          onPressed: () => _showAddAccountDialog(context),
-          icon: const Icon(Icons.add, size: 20),
-          label: const Text('Add Account'),
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
         if (accounts.isEmpty)
           Center(
             child: Padding(
@@ -135,35 +122,7 @@ class AccountsTab extends StatelessWidget {
         else ...[
           // Total Overview Card
           _buildTotalOverviewCard(theme),
-          const SizedBox(height: 16),
 
-          // Account Type Distribution
-          if (accounts.length > 1) ...[
-            _buildAccountTypeDistribution(theme),
-            const SizedBox(height: 24),
-          ],
-
-          // Accounts List Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Your Accounts',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '${accounts.length} account${accounts.length > 1 ? 's' : ''}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Accounts List
           ...accounts.map((account) {
             final balance = _getAccountBalance(account.id);
             final transactionCount = _getTransactionCount(account.id);
@@ -239,13 +198,10 @@ class AccountsTab extends StatelessWidget {
                                   _formatCurrency(balance),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: balance >= 0
-                                        ? Colors.green
-                                        : Colors.red,
                                   ),
                                 ),
                                 Text(
-                                  '$transactionCount txn${transactionCount > 1 ? 's' : ''}',
+                                  '$transactionCount Transaction${transactionCount > 1 ? 's' : ''}',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -254,43 +210,6 @@ class AccountsTab extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (transactionCount > 0) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _buildMiniStat(
-                                    theme,
-                                    'Income',
-                                    _formatCurrency(income),
-                                    Colors.green,
-                                    Icons.arrow_downward,
-                                  ),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 30,
-                                  color: theme.colorScheme.outlineVariant,
-                                ),
-                                Expanded(
-                                  child: _buildMiniStat(
-                                    theme,
-                                    'Expenses',
-                                    _formatCurrency(expenses),
-                                    Colors.red,
-                                    Icons.arrow_upward,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -298,6 +217,13 @@ class AccountsTab extends StatelessWidget {
               ),
             );
           }),
+
+          // Add Account Button
+          OutlinedButton.icon(
+            onPressed: () => _showAddAccountDialog(context),
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Add Account'),
+          ),
         ],
         const SizedBox(height: 100),
       ],
@@ -307,34 +233,16 @@ class AccountsTab extends StatelessWidget {
   Widget _buildTotalOverviewCard(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(0),
         color: theme.colorScheme.surface,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.account_balance_wallet,
-                    color: theme.colorScheme.primary,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,81 +269,9 @@ class AccountsTab extends StatelessWidget {
               _formatCurrency(_totalBalance),
               style: theme.textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: _totalBalance >= 0 ? Colors.green : Colors.red,
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.trending_up,
-                            color: Colors.green,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Income',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatCurrency(_totalIncome),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: theme.colorScheme.outlineVariant,
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.trending_down,
-                            color: Colors.red,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Expenses',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatCurrency(_totalExpenses),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -465,22 +301,14 @@ class AccountsTab extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(0),
         color: theme.colorScheme.surface,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Balance by Type',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             ...sortedTypes.map((entry) {
               final percentage = _totalBalance > 0
                   ? (entry.value / _totalBalance * 100)
@@ -528,7 +356,6 @@ class AccountsTab extends StatelessWidget {
                           _formatCurrency(entry.value),
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: entry.value >= 0 ? Colors.green : Colors.red,
                           ),
                         ),
                       ],
@@ -705,7 +532,6 @@ class AccountsTab extends StatelessWidget {
                           _formatCurrency(balance),
                           style: theme.textTheme.displaySmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: balance >= 0 ? Colors.green : Colors.red,
                           ),
                         ),
                       ],

@@ -1,7 +1,9 @@
+import 'package:fends/manager/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:local_auth/local_auth.dart';
@@ -202,6 +204,9 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
           const SizedBox(height: 16),
         ],
+
+        _buildThemeSection(context),
+        const SizedBox(height: 16),
 
         // Categories Management Section
         if (widget.categories != null) ...[
@@ -541,6 +546,245 @@ class _SettingsTabState extends State<SettingsTab> {
         ),
         const SizedBox(height: 100),
       ],
+    );
+  }
+
+  Widget _buildThemeSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surface,
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.palette_outlined,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Appearance',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: theme.colorScheme.outlineVariant),
+
+          // Theme Mode Selector
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                themeManager.themeMode == ThemeMode.light
+                    ? Icons.light_mode
+                    : themeManager.themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.brightness_auto,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            title: const Text('Theme'),
+            subtitle: Text(themeManager.getThemeModeLabel()),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showThemeModeDialog(context),
+          ),
+
+          Divider(
+            height: 1,
+            indent: 72,
+            color: theme.colorScheme.outlineVariant,
+          ),
+
+          // Dynamic Color Toggle
+          SwitchListTile(
+            secondary: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.colorize, color: theme.colorScheme.primary),
+            ),
+            title: const Text('Material You'),
+            subtitle: Text(
+              themeManager.useDynamicColor
+                  ? 'Using system colors'
+                  : 'Using default colors',
+            ),
+            value: themeManager.useDynamicColor,
+            onChanged: (value) {
+              themeManager.setUseDynamicColor(value);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    value
+                        ? 'Dynamic colors enabled'
+                        : 'Dynamic colors disabled',
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showThemeModeDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle and header
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                          0.4,
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Choose Theme',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+
+            // Theme options
+            _buildThemeOption(
+              context,
+              theme,
+              themeManager,
+              ThemeMode.light,
+              Icons.light_mode,
+              'Light',
+              'Always use light theme',
+              Colors.amber,
+            ),
+            Divider(
+              height: 1,
+              indent: 72,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            _buildThemeOption(
+              context,
+              theme,
+              themeManager,
+              ThemeMode.dark,
+              Icons.dark_mode,
+              'Dark',
+              'Always use dark theme',
+              Colors.indigo,
+            ),
+            Divider(
+              height: 1,
+              indent: 72,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            _buildThemeOption(
+              context,
+              theme,
+              themeManager,
+              ThemeMode.system,
+              Icons.brightness_auto,
+              'System',
+              'Follow system settings',
+              Colors.purple,
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOption(
+    BuildContext context,
+    ThemeData theme,
+    ThemeManager themeManager,
+    ThemeMode mode,
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+  ) {
+    final isSelected = themeManager.themeMode == mode;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      subtitle: Text(subtitle),
+      trailing: isSelected
+          ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+          : Icon(
+              Icons.circle_outlined,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+            ),
+      onTap: () {
+        themeManager.setThemeMode(mode);
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Theme changed to $title'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
     );
   }
 

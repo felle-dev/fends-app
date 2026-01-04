@@ -1,7 +1,8 @@
-import 'dart:ui';
+import 'package:fends/manager/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:provider/provider.dart';
 import 'package:fends/controller/controller.dart';
 
 class FendsApp extends StatelessWidget {
@@ -42,31 +43,40 @@ class FendsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        ColorScheme lightColorScheme;
-        ColorScheme darkColorScheme;
+    return ChangeNotifierProvider(
+      create: (_) => ThemeManager(),
+      child: Consumer<ThemeManager>(
+        builder: (context, themeManager, _) {
+          return DynamicColorBuilder(
+            builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+              ColorScheme lightColorScheme;
+              ColorScheme darkColorScheme;
 
-        if (lightDynamic != null && darkDynamic != null) {
-          lightColorScheme = lightDynamic.harmonized();
-          darkColorScheme = darkDynamic.harmonized();
-        } else {
-          lightColorScheme = ColorScheme.fromSeed(seedColor: Colors.teal);
-          darkColorScheme = ColorScheme.fromSeed(
-            seedColor: Colors.teal,
-            brightness: Brightness.dark,
+              if (themeManager.useDynamicColor &&
+                  lightDynamic != null &&
+                  darkDynamic != null) {
+                lightColorScheme = lightDynamic.harmonized();
+                darkColorScheme = darkDynamic.harmonized();
+              } else {
+                lightColorScheme = ColorScheme.fromSeed(seedColor: Colors.grey);
+                darkColorScheme = ColorScheme.fromSeed(
+                  seedColor: Colors.grey,
+                  brightness: Brightness.dark,
+                );
+              }
+
+              return MaterialApp(
+                title: 'Fends',
+                theme: _buildThemeData(lightColorScheme, Brightness.light),
+                darkTheme: _buildThemeData(darkColorScheme, Brightness.dark),
+                themeMode: themeManager.themeMode,
+                home: const AppController(),
+                debugShowCheckedModeBanner: false,
+              );
+            },
           );
-        }
-
-        return MaterialApp(
-          title: 'Fends',
-          theme: _buildThemeData(lightColorScheme, Brightness.light),
-          darkTheme: _buildThemeData(darkColorScheme, Brightness.dark),
-          themeMode: ThemeMode.system,
-          home: const AppController(),
-          debugShowCheckedModeBanner: false,
-        );
-      },
+        },
+      ),
     );
   }
 }

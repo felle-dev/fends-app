@@ -353,8 +353,6 @@ class _TransactionsTabState extends State<TransactionsTab> {
   }
 
   Widget _buildSummaryCards(ThemeData theme) {
-    final netChange = _periodIncome - _periodSpent;
-
     return Row(
       children: [
         Expanded(
