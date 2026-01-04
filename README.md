@@ -10,6 +10,7 @@ A simple budget management app
   <img src="./screenshot/ss1.png" width="200">
   <img src="./screenshot/ss2.png" width="200">
   <img src="./screenshot/ss3.png" width="200">
+  <img src="./screenshot/ss4.png" width="200">
 </div>
 
 ## Tech Stack
