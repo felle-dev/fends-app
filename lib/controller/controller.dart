@@ -339,6 +339,34 @@ class _AppControllerState extends State<AppController> {
     _saveData();
   }
 
+  void _addCategory(Category category) {
+    setState(() {
+      _categories.add(category);
+    });
+    _saveData();
+  }
+
+  void _updateCategory(Category updatedCategory) {
+    setState(() {
+      final index = _categories.indexWhere((c) => c.id == updatedCategory.id);
+      if (index != -1) {
+        _categories[index] = updatedCategory;
+      }
+    });
+    _saveData();
+  }
+
+  void _deleteCategory(String categoryId) {
+    setState(() {
+      _categories.removeWhere((c) => c.id == categoryId);
+
+      // Optionally: Reassign transactions to "Other" category
+      // You could add logic here to handle orphaned transactions
+      // For now, transactions will keep their categoryId even if category is deleted
+    });
+    _saveData();
+  }
+
   void _resetApp() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -492,6 +520,9 @@ class _AppControllerState extends State<AppController> {
       onDeleteTransaction: _deleteTransaction,
       onDeleteAccount: _deleteAccount,
       onUpdateTransaction: _updateTransaction,
+      onAddCategory: _addCategory,
+      onUpdateCategory: _updateCategory,
+      onDeleteCategory: _deleteCategory,
       onReset: _resetApp,
       onExportData: _exportData,
       onImportData: _importData,

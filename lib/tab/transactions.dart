@@ -24,6 +24,20 @@ class TransactionsTab extends StatelessWidget {
     required this.onUpdateTransaction,
   });
 
+  Category _getCategoryById(String categoryId) {
+    try {
+      return categories.firstWhere((c) => c.id == categoryId);
+    } catch (e) {
+      return Category(
+        id: 'unknown',
+        name: 'Unknown Category',
+        icon: Icons.help_outline,
+        color: Colors.grey,
+        isExpense: true,
+      );
+    }
+  }
+
   String _formatCurrency(double amount) {
     final formatter = NumberFormat.currency(
       symbol: currencySymbol,
@@ -34,10 +48,7 @@ class TransactionsTab extends StatelessWidget {
   }
 
   bool _isTransferTransaction(Transaction transaction) {
-    final category = categories.firstWhere(
-      (c) => c.id == transaction.categoryId,
-      orElse: () => categories.first,
-    );
+    final category = _getCategoryById(transaction.categoryId);
     return category.name == 'Transfer';
   }
 
@@ -74,9 +85,7 @@ class TransactionsTab extends StatelessWidget {
           )
         else
           ...sortedTransactions.map((transaction) {
-            final category = categories.firstWhere(
-              (c) => c.id == transaction.categoryId,
-            );
+            final category = _getCategoryById(transaction.categoryId);
             final account = accounts.firstWhere(
               (a) => a.id == transaction.accountId,
             );
@@ -260,9 +269,7 @@ class TransactionsTab extends StatelessWidget {
     Transaction transaction,
   ) {
     final theme = Theme.of(context);
-    final category = categories.firstWhere(
-      (c) => c.id == transaction.categoryId,
-    );
+    final category = _getCategoryById(transaction.categoryId);
 
     showDialog(
       context: context,

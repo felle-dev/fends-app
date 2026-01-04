@@ -26,6 +26,20 @@ class OverviewTab extends StatelessWidget {
     required this.onNavigateToAccounts,
   });
 
+  Category _getCategoryById(String categoryId) {
+    try {
+      return categories.firstWhere((c) => c.id == categoryId);
+    } catch (e) {
+      return Category(
+        id: 'unknown',
+        name: 'Unknown Category',
+        icon: Icons.help_outline,
+        color: Colors.grey,
+        isExpense: true,
+      );
+    }
+  }
+
   double get _currentBalance {
     double balance = totalBudget;
     for (var t in transactions) {
@@ -732,9 +746,7 @@ class OverviewTab extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: sortedEntries.take(5).map((entry) {
-                final category = categories.firstWhere(
-                  (c) => c.id == entry.key,
-                );
+                final category = _getCategoryById(entry.key);
                 final percentage = _totalSpent > 0
                     ? (entry.value / _totalSpent) * 100
                     : 0.0;

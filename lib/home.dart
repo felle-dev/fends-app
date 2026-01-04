@@ -21,6 +21,9 @@ class HomeScreen extends StatefulWidget {
   final Function(String) onDeleteTransaction;
   final Function(String) onDeleteAccount;
   final Function(Transaction) onUpdateTransaction;
+  final Function(Category) onAddCategory;
+  final Function(Category) onUpdateCategory;
+  final Function(String) onDeleteCategory;
   final VoidCallback onReset;
   final Future<String> Function() onExportData;
   final Future<void> Function(String) onImportData;
@@ -41,6 +44,9 @@ class HomeScreen extends StatefulWidget {
     required this.onDeleteTransaction,
     required this.onDeleteAccount,
     required this.onUpdateTransaction,
+    required this.onAddCategory,
+    required this.onUpdateCategory,
+    required this.onDeleteCategory,
     required this.onReset,
     required this.onExportData,
     required this.onImportData,
@@ -140,6 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
             onReset: widget.onReset,
             biometricEnabled: widget.biometricEnabled,
             onBiometricChanged: widget.onBiometricChanged,
+            categories: widget.categories,
+            onAddCategory: widget.onAddCategory,
+            onUpdateCategory: widget.onUpdateCategory,
+            onDeleteCategory: widget.onDeleteCategory,
           ),
         ],
       ),

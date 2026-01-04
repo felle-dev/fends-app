@@ -51,6 +51,7 @@ class Category {
   final IconData icon;
   final Color color;
   final bool isExpense;
+  final bool isDeletable;
 
   Category({
     required this.id,
@@ -58,6 +59,7 @@ class Category {
     required this.icon,
     required this.color,
     required this.isExpense,
+    this.isDeletable = true,
   });
 
   Map<String, dynamic> toJson() => {
