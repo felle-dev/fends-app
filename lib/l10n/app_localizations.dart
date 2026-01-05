@@ -68,6 +68,21 @@ class AppLocalizations {
       'netChange': 'Net Change',
       'actionCannotBeUndone': 'This action cannot be undone.',
 
+      // Overview
+      'overview': 'Overview',
+      'balanceTrend': 'Balance Trend',
+      'viewAll': 'View All',
+      'daysLeft': '{} days left',
+      'ofBudget': 'of {} budget',
+      'todaysBudgetRemaining': 'Today\'s Budget Remaining',
+      'spendingByCategory': 'Spending by Category',
+
+      // Home & Navigation
+      'settings': 'Settings',
+      'addTransaction': 'Add Transaction',
+      'transferToAccount': 'Transfer to {}',
+      'transferFromAccount': 'Transfer from {}',
+
       // Security
       'security': 'Security',
       'biometricLock': 'Lock',
@@ -227,6 +242,21 @@ class AppLocalizations {
       'initial': 'Awal',
       'netChange': 'Perubahan Bersih',
       'actionCannotBeUndone': 'Tindakan ini tidak dapat dibatalkan.',
+
+      // Overview
+      'overview': 'Ringkasan',
+      'balanceTrend': 'Tren Saldo',
+      'viewAll': 'Lihat Semua',
+      'daysLeft': '{} hari tersisa',
+      'ofBudget': 'dari {} anggaran',
+      'todaysBudgetRemaining': 'Sisa Anggaran Hari Ini',
+      'spendingByCategory': 'Pengeluaran per Kategori',
+
+      // Home & Navigation
+      'settings': 'Pengaturan',
+      'addTransaction': 'Tambah Transaksi',
+      'transferToAccount': 'Transfer ke {}',
+      'transferFromAccount': 'Transfer dari {}',
 
       // Security
       'security': 'Keamanan',

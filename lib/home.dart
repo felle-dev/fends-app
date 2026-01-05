@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:fends/model.dart';
+import 'package:fends/constants/app_strings.dart';
 
 class HomeScreen extends StatefulWidget {
   final String currency;
@@ -77,15 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _currentTitle {
     switch (_navIndex) {
       case 0:
-        return 'Overview';
+        return AppStrings.overview;
       case 1:
-        return 'Accounts';
+        return AppStrings.accounts;
       case 2:
-        return 'Transactions';
+        return AppStrings.transactions;
       case 3:
-        return 'Settings';
+        return AppStrings.settings;
       default:
-        return 'Fends';
+        return AppStrings.appName;
     }
   }
 
@@ -103,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -194,26 +196,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   0.8,
                 ),
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-                destinations: const [
+                destinations: [
                   NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Overview',
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home),
+                    label: AppStrings.overview,
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.account_balance_wallet_outlined),
-                    selectedIcon: Icon(Icons.account_balance_wallet),
-                    label: 'Accounts',
+                    icon: const Icon(Icons.account_balance_wallet_outlined),
+                    selectedIcon: const Icon(Icons.account_balance_wallet),
+                    label: AppStrings.accounts,
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.receipt_long_outlined),
-                    selectedIcon: Icon(Icons.receipt_long),
-                    label: 'Transactions',
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    selectedIcon: const Icon(Icons.receipt_long),
+                    label: AppStrings.transactions,
                   ),
                   NavigationDestination(
-                    icon: Icon(Icons.settings_outlined),
-                    selectedIcon: Icon(Icons.settings),
-                    label: 'Settings',
+                    icon: const Icon(Icons.settings_outlined),
+                    selectedIcon: const Icon(Icons.settings),
+                    label: AppStrings.settings,
                   ),
                 ],
               ),
@@ -273,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Text(
-                    'Add Transaction',
+                    AppStrings.addTransaction,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -282,21 +284,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Type selector
                   SegmentedButton<String>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: 'expense',
-                        label: Text('Expense'),
-                        icon: Icon(Icons.remove_circle_outline),
+                        label: Text(AppStrings.expense),
+                        icon: const Icon(Icons.remove_circle_outline),
                       ),
                       ButtonSegment(
                         value: 'income',
-                        label: Text('Income'),
-                        icon: Icon(Icons.add_circle_outline),
+                        label: Text(AppStrings.income),
+                        icon: const Icon(Icons.add_circle_outline),
                       ),
                       ButtonSegment(
                         value: 'transfer',
-                        label: Text('Transfer'),
-                        icon: Icon(Icons.swap_horiz),
+                        label: Text(AppStrings.transfer),
+                        icon: const Icon(Icons.swap_horiz),
                       ),
                     ],
                     selected: {transactionType},
@@ -330,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Amount',
+                          AppStrings.amount,
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
@@ -376,8 +378,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         transactionType == 'transfer'
-                            ? 'From Account'
-                            : 'Account',
+                            ? AppStrings.fromAccount
+                            : AppStrings.account,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: theme.colorScheme.onSurface,
@@ -437,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'To Account',
+                          AppStrings.toAccount,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface,
@@ -507,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Category',
+                          AppStrings.category,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface,
@@ -587,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Cancel'),
+                          child: Text(AppStrings.cancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -620,8 +622,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   categoryId: widget.categories
                                       .firstWhere((c) => c.name == 'Transfer')
                                       .id,
-                                  note:
-                                      'Transfer to ${selectedToAccount!.name}',
+                                  note: AppStrings.format(
+                                    AppStrings.transferToAccount,
+                                    [selectedToAccount!.name],
+                                  ),
                                 ),
                               );
 
@@ -636,7 +640,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   categoryId: widget.categories
                                       .firstWhere((c) => c.name == 'Transfer')
                                       .id,
-                                  note: 'Transfer from ${selectedAccount.name}',
+                                  note: AppStrings.format(
+                                    AppStrings.transferFromAccount,
+                                    [selectedAccount.name],
+                                  ),
                                 ),
                               );
                             } else {
@@ -662,7 +669,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Add Transaction'),
+                          child: Text(AppStrings.addTransaction),
                         ),
                       ),
                     ],

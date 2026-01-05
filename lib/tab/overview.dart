@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
 import 'package:fends/helper/graph.dart';
+import 'package:fends/constants/app_strings.dart';
 
 class OverviewTab extends StatelessWidget {
   final String currency;
@@ -35,7 +36,7 @@ class OverviewTab extends StatelessWidget {
     } catch (e) {
       return Category(
         id: 'unknown',
-        name: 'Unknown Category',
+        name: AppStrings.unknownCategory,
         icon: Icons.help_outline,
         color: Colors.grey,
         isExpense: true,
@@ -85,14 +86,25 @@ class OverviewTab extends StatelessWidget {
   double get _baseDailyAllowance =>
       _daysLeft > 0 ? _currentBalance / _daysLeft : 0;
 
-  // Calculate rollover from previous days
+  double get _todayIncome {
+    final today = DateTime.now();
+    return transactions
+        .where(
+          (t) =>
+              t.isIncome &&
+              t.date.year == today.year &&
+              t.date.month == today.month &&
+              t.date.day == today.day,
+        )
+        .fold(0.0, (sum, t) => sum + t.amount);
+  }
+
+  // Calculate rollover from previous days (ONLY POSITIVE SAVINGS)
   double get _rolloverAmount {
     if (transactions.isEmpty) return 0;
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Get the earliest transaction or budget start date (whichever is more recent)
     final earliestTransaction = transactions.isEmpty
         ? today
         : transactions.reduce((a, b) => a.date.isBefore(b.date) ? a : b).date;
@@ -103,7 +115,6 @@ class OverviewTab extends StatelessWidget {
       earliestTransaction.day,
     );
 
-    // Don't calculate rollover if we just started
     if (startDate.isAtSameMomentAs(today) || startDate.isAfter(today)) {
       return 0;
     }
@@ -115,16 +126,26 @@ class OverviewTab extends StatelessWidget {
     while (checkDate.isBefore(today)) {
       final dayTransactions = transactions.where((t) {
         final tDate = DateTime(t.date.year, t.date.month, t.date.day);
-        return !t.isIncome && tDate.isAtSameMomentAs(checkDate);
+        return tDate.isAtSameMomentAs(checkDate);
       });
 
-      final daySpent = dayTransactions.fold(0.0, (sum, t) => sum + t.amount);
-      final dayAllowance = _baseDailyAllowance;
-      final daySavings = dayAllowance - daySpent;
+      final daySpent = dayTransactions
+          .where((t) => !t.isIncome)
+          .fold(0.0, (sum, t) => sum + t.amount);
 
-      // Only add positive savings (didn't overspend)
-      if (daySavings > 0) {
-        totalRollover += daySavings;
+      final dayIncome = dayTransactions
+          .where((t) => t.isIncome)
+          .fold(0.0, (sum, t) => sum + t.amount);
+
+      final dayAllowance = _baseDailyAllowance;
+      final daySavings = dayAllowance + dayIncome - daySpent;
+
+      // Add savings (positive or negative)
+      totalRollover += daySavings;
+
+      // If rollover goes negative, reset to 0 (lose all rollover bonus)
+      if (totalRollover < 0) {
+        totalRollover = 0;
       }
 
       checkDate = checkDate.add(const Duration(days: 1));
@@ -137,23 +158,53 @@ class OverviewTab extends StatelessWidget {
   double get _dailyAllowanceWithRollover =>
       _baseDailyAllowance + _rolloverAmount;
 
-  double get _averageDailySpending {
-    if (transactions.isEmpty) return 0;
-    final earliestTransaction = transactions.reduce(
-      (a, b) => a.date.isBefore(b.date) ? a : b,
+  Widget _buildDailySpendingFocusCard(ThemeData theme) {
+    final remainingBudget =
+        _dailyAllowanceWithRollover + _todayIncome - _todaySpent;
+    final isOverBudget = remainingBudget < 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: isOverBudget
+            ? Colors.red.withOpacity(0.3)
+            : Colors.green.withOpacity(0.3),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppStrings.todaysBudgetRemaining,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _formatCurrency(remainingBudget),
+              style: theme.textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
-    final daysSinceFirstTransaction =
-        DateTime.now().difference(earliestTransaction.date).inDays + 1;
-    return daysSinceFirstTransaction > 0
-        ? _totalSpent / daysSinceFirstTransaction
-        : 0;
   }
 
-  DateTime? get _estimatedRunoutDate {
-    if (_averageDailySpending <= 0) return null;
-    final daysRemaining = _currentBalance / _averageDailySpending;
-    return DateTime.now().add(Duration(days: daysRemaining.floor()));
-  }
+  // double get _averageDailySpending {
+  //   if (transactions.isEmpty) return 0;
+  //   final earliestTransaction = transactions.reduce(
+  //     (a, b) => a.date.isBefore(b.date) ? a : b,
+  //   );
+  //   final daysSinceFirstTransaction =
+  //       DateTime.now().difference(earliestTransaction.date).inDays + 1;
+  //   return daysSinceFirstTransaction > 0
+  //       ? _totalSpent / daysSinceFirstTransaction
+  //       : 0;
+  // }
 
   double _getAccountBalance(String accountId) {
     final account = accounts.firstWhere((a) => a.id == accountId);
@@ -175,6 +226,7 @@ class OverviewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
 
     return ListView(
@@ -190,14 +242,14 @@ class OverviewTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Balance Trend',
+              AppStrings.balanceTrend,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             TextButton(
               onPressed: onNavigateToTransactions,
-              child: const Text('View All'),
+              child: Text(AppStrings.viewAll),
             ),
           ],
         ),
@@ -205,15 +257,6 @@ class OverviewTab extends StatelessWidget {
         _buildBalanceTrendCard(theme),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
-        // const SizedBox(height: 12),
-        // Text(
-        //   'Budget Runway',
-        //   style: theme.textTheme.titleLarge?.copyWith(
-        //     fontWeight: FontWeight.bold,
-        //   ),
-        // ),
-        // const SizedBox(height: 12),
-        // _buildBudgetRunwayCard(theme),
         const SizedBox(height: 100),
       ],
     );
@@ -238,7 +281,7 @@ class OverviewTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Current Balance',
+                  AppStrings.currentBalance,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -257,7 +300,9 @@ class OverviewTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$_daysLeft days left',
+                    AppStrings.format(AppStrings.daysLeft, [
+                      _daysLeft.toString(),
+                    ]),
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -275,7 +320,9 @@ class OverviewTab extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'of ${_formatCurrency(totalBudget)} budget',
+              AppStrings.format(AppStrings.ofBudget, [
+                _formatCurrency(totalBudget),
+              ]),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -296,41 +343,6 @@ class OverviewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildDailySpendingFocusCard(ThemeData theme) {
-    final remainingBudget = _dailyAllowanceWithRollover - _todaySpent;
-    final isOverBudget = remainingBudget < 0;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: isOverBudget
-            ? Colors.red.withOpacity(0.3)
-            : Colors.green.withOpacity(0.3),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Today\'s Budget Remaining',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _formatCurrency(_dailyAllowanceWithRollover - _todaySpent),
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildAccountsOverviewCard(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,14 +351,14 @@ class OverviewTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Accounts',
+              AppStrings.accounts,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             TextButton(
               onPressed: onNavigateToAccounts,
-              child: const Text('View All'),
+              child: Text(AppStrings.viewAll),
             ),
           ],
         ),
@@ -459,7 +471,7 @@ class OverviewTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Spending by Category',
+          AppStrings.spendingByCategory,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -552,138 +564,6 @@ class OverviewTab extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBudgetRunwayCard(ThemeData theme) {
-    final runoutDate = _estimatedRunoutDate;
-
-    final willRunOutBeforeFinalDate =
-        runoutDate != null && runoutDate.isBefore(finalDate);
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: willRunOutBeforeFinalDate
-              ? Colors.orange.withOpacity(0.5)
-              : theme.colorScheme.outlineVariant,
-          width: willRunOutBeforeFinalDate ? 2 : 1,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        color: willRunOutBeforeFinalDate
-            ? Colors.orange.withOpacity(0.05)
-            : theme.colorScheme.surface,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_averageDailySpending > 0 && runoutDate != null) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Estimated Runout',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat('MMM d, yyyy').format(runoutDate),
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: willRunOutBeforeFinalDate
-                                ? Colors.orange
-                                : theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 60,
-                    color: theme.colorScheme.outlineVariant,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Avg. Daily Spend',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatCurrency(_averageDailySpending),
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (willRunOutBeforeFinalDate) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.orange.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.priority_high_rounded,
-                        color: Colors.orange,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Budget may run out ${finalDate.difference(runoutDate).inDays} days before your target date',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.orange.shade700,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ] else ...[
-              Text(
-                'Not enough data to estimate',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Add more transactions to see budget runway',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

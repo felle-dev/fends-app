@@ -308,6 +308,33 @@ class AppStrings {
       _localizations?.translate('actionCannotBeUndone') ??
       'This action cannot be undone.';
 
+  // Overview
+  static String get overview =>
+      _localizations?.translate('overview') ?? 'Overview';
+  static String get balanceTrend =>
+      _localizations?.translate('balanceTrend') ?? 'Balance Trend';
+  static String get viewAll =>
+      _localizations?.translate('viewAll') ?? 'View All';
+  static String get daysLeft =>
+      _localizations?.translate('daysLeft') ?? '{} days left';
+  static String get ofBudget =>
+      _localizations?.translate('ofBudget') ?? 'of {} budget';
+  static String get todaysBudgetRemaining =>
+      _localizations?.translate('todaysBudgetRemaining') ??
+      'Today\'s Budget Remaining';
+  static String get spendingByCategory =>
+      _localizations?.translate('spendingByCategory') ?? 'Spending by Category';
+
+  // Home & Navigation
+  static String get settings =>
+      _localizations?.translate('settings') ?? 'Settings';
+  static String get addTransaction =>
+      _localizations?.translate('addTransaction') ?? 'Add Transaction';
+  static String get transferToAccount =>
+      _localizations?.translate('transferToAccount') ?? 'Transfer to {}';
+  static String get transferFromAccount =>
+      _localizations?.translate('transferFromAccount') ?? 'Transfer from {}';
+
   static String format(String template, List<String> args) {
     String result = template;
     for (var arg in args) {

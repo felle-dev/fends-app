@@ -504,26 +504,31 @@ class _TransactionsTabState extends State<TransactionsTab> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          // Income bar
-                          Container(
-                            height: incomeHeight,
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.7),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Income bar
+                              Expanded(
+                                child: Container(
+                                  height: incomeHeight,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          // Expense bar
-                          Container(
-                            height: expenseHeight,
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.7),
-                              borderRadius: const BorderRadius.vertical(
-                                bottom: Radius.circular(4),
+                              const SizedBox(width: 2),
+                              // Expense bar
+                              Expanded(
+                                child: Container(
+                                  height: expenseHeight,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           Text(
