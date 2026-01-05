@@ -121,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
             accounts: widget.accounts,
             categories: widget.categories,
             onNavigateToAccounts: () => _onNavTapped(1),
+            onNavigateToTransactions: () => _onNavTapped(2),
           ),
           AccountsTab(
             currency: widget.currency,

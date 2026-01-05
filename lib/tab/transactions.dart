@@ -156,6 +156,14 @@ class _TransactionsTabState extends State<TransactionsTab> {
           const SizedBox(height: 16),
         ],
 
+        Text(
+          AppStrings.topCategories,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+
         // Category breakdown
         if (_getCategoryBreakdown().isNotEmpty) ...[
           _buildCategoryBreakdownCard(theme),
@@ -462,13 +470,9 @@ class _TransactionsTabState extends State<TransactionsTab> {
     );
 
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surface,
-      ),
+      decoration: BoxDecoration(color: theme.colorScheme.surface),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -586,17 +590,10 @@ class _TransactionsTabState extends State<TransactionsTab> {
         color: theme.colorScheme.surface,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              AppStrings.topCategories,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
             ...sortedEntries.take(5).map((entry) {
               final category = _getCategoryById(entry.key);
               final percentage = totalSpent > 0

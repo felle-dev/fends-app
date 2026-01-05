@@ -13,6 +13,7 @@ class OverviewTab extends StatelessWidget {
   final List<Account> accounts;
   final List<Category> categories;
   final VoidCallback onNavigateToAccounts;
+  final VoidCallback onNavigateToTransactions;
 
   const OverviewTab({
     super.key,
@@ -24,6 +25,7 @@ class OverviewTab extends StatelessWidget {
     required this.accounts,
     required this.categories,
     required this.onNavigateToAccounts,
+    required this.onNavigateToTransactions,
   });
 
   Category _getCategoryById(String categoryId) {
@@ -174,11 +176,20 @@ class OverviewTab extends StatelessWidget {
         const SizedBox(height: 24),
         _buildAccountsOverviewCard(theme),
         const SizedBox(height: 24),
-        Text(
-          'Balance Trend',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Balance Trend',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton(
+              onPressed: onNavigateToTransactions,
+              child: const Text('View All'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         _buildBalanceTrendCard(theme),
@@ -582,13 +593,6 @@ class OverviewTab extends StatelessWidget {
                             color: willRunOutBeforeFinalDate
                                 ? Colors.orange
                                 : theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'in $daysUntilRunout days',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
