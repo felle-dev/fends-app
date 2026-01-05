@@ -1,4 +1,4 @@
-package com.example.fends
+package com.felle.fends
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

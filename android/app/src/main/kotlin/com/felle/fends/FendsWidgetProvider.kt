@@ -1,4 +1,4 @@
-package com.example.fends
+package com.felle.fends
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider

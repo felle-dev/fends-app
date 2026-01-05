@@ -52,17 +52,26 @@ class OverviewTab extends StatelessWidget {
   }
 
   double get _totalSpent {
+    final transferCategoryId = categories
+        .firstWhere((c) => c.name == 'Transfer')
+        .id;
+
     return transactions
-        .where((t) => !t.isIncome)
+        .where((t) => !t.isIncome && t.categoryId != transferCategoryId)
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
   double get _todaySpent {
     final today = DateTime.now();
+    final transferCategoryId = categories
+        .firstWhere((c) => c.name == 'Transfer')
+        .id;
+
     return transactions
         .where(
           (t) =>
               !t.isIncome &&
+              t.categoryId != transferCategoryId &&
               t.date.year == today.year &&
               t.date.month == today.month &&
               t.date.day == today.day,
@@ -196,15 +205,15 @@ class OverviewTab extends StatelessWidget {
         _buildBalanceTrendCard(theme),
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
-        const SizedBox(height: 12),
-        Text(
-          'Budget Runway',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildBudgetRunwayCard(theme),
+        // const SizedBox(height: 12),
+        // Text(
+        //   'Budget Runway',
+        //   style: theme.textTheme.titleLarge?.copyWith(
+        //     fontWeight: FontWeight.bold,
+        //   ),
+        // ),
+        // const SizedBox(height: 12),
+        // _buildBudgetRunwayCard(theme),
         const SizedBox(height: 100),
       ],
     );
