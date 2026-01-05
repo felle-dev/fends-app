@@ -2,8 +2,8 @@
 A simple budget management app
 
 ## Features
-- Create budgets
 - Add transactions
+- View transactions
 
 ## Screenshot
 <div style="display: flex; justify-content: space-around;">
@@ -21,7 +21,7 @@ A simple budget management app
 ## Requirements
 - Flutter SDK
 - Minimum SDK: API 24 (Android 7.0)
-- Target SDK: API 34
+- Target SDK: API 36
 
 ## Contributing
 Feel free to open issues or submit pull requests. All contributions are welcome!
