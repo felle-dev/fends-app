@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
+import 'package:fends/constants/app_strings.dart';
 
 class AccountsTab extends StatelessWidget {
   final String currency;
@@ -63,6 +64,7 @@ class AccountsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
 
     return ListView(
@@ -81,14 +83,14 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No accounts yet',
+                    AppStrings.noAccountsYet,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add your first account to start tracking',
+                    AppStrings.addFirstAccount,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -179,7 +181,10 @@ class AccountsTab extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  '$transactionCount Transaction${transactionCount > 1 ? 's' : ''}',
+                                  AppStrings.format(
+                                    AppStrings.transactionCount,
+                                    [transactionCount.toString()],
+                                  ),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -200,7 +205,7 @@ class AccountsTab extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => _showAddAccountDialog(context),
             icon: const Icon(Icons.add, size: 20),
-            label: const Text('Add Account'),
+            label: Text(AppStrings.addAccount),
           ),
         ],
         const SizedBox(height: 100),
@@ -226,13 +231,15 @@ class AccountsTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total Net Worth',
+                        AppStrings.totalNetWorth,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       Text(
-                        'across ${accounts.length} account${accounts.length > 1 ? 's' : ''}',
+                        AppStrings.format(AppStrings.acrossAccounts, [
+                          accounts.length.toString(),
+                        ]),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -363,7 +370,7 @@ class AccountsTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Current Balance',
+                          AppStrings.currentBalance,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -402,7 +409,7 @@ class AccountsTab extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Transactions',
+                                    AppStrings.transactions,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -440,7 +447,7 @@ class AccountsTab extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Initial',
+                                    AppStrings.initial,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -486,7 +493,7 @@ class AccountsTab extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        'Income',
+                                        AppStrings.income,
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color: theme
@@ -526,7 +533,7 @@ class AccountsTab extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        'Expenses',
+                                        AppStrings.expenses,
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color: theme
@@ -559,7 +566,7 @@ class AccountsTab extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Net Change',
+                              AppStrings.netChange,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
@@ -598,7 +605,7 @@ class AccountsTab extends StatelessWidget {
                           Icons.delete,
                           color: theme.colorScheme.error,
                         ),
-                        label: const Text('Delete Account'),
+                        label: Text(AppStrings.deleteAccount),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -627,7 +634,7 @@ class AccountsTab extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'You must have at least one account',
+                              AppStrings.mustHaveOneAccount,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -703,7 +710,9 @@ class AccountsTab extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '$transactionCount transaction${transactionCount != 1 ? 's' : ''}',
+                              AppStrings.format(AppStrings.transactionCount, [
+                                transactionCount.toString(),
+                              ]),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -718,7 +727,7 @@ class AccountsTab extends StatelessWidget {
                 if (accounts.length > 1)
                   ListTile(
                     leading: Icon(Icons.delete, color: theme.colorScheme.error),
-                    title: const Text('Delete Account'),
+                    title: Text(AppStrings.deleteAccount),
                     onTap: () {
                       Navigator.pop(context);
                       _showDeleteConfirmationDialog(
@@ -735,7 +744,7 @@ class AccountsTab extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     title: Text(
-                      'Cannot delete last account',
+                      AppStrings.cannotDeleteLastAccount,
                       style: TextStyle(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -744,7 +753,7 @@ class AccountsTab extends StatelessWidget {
                   ),
                 ListTile(
                   leading: const Icon(Icons.close),
-                  title: const Text('Cancel'),
+                  title: Text(AppStrings.cancel),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -771,15 +780,18 @@ class AccountsTab extends StatelessWidget {
           color: theme.colorScheme.error,
           size: 48,
         ),
-        title: const Text('Delete Account?'),
+        title: Text(AppStrings.deleteAccountQuestion),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               transactionCount > 0
-                  ? 'This account has $transactionCount transaction${transactionCount > 1 ? 's' : ''}. Deleting this account will also delete all associated transactions.'
-                  : 'Are you sure you want to delete this account?',
+                  ? AppStrings.format(
+                      AppStrings.deleteAccountWithTransactionsWarning,
+                      [transactionCount.toString()],
+                    )
+                  : AppStrings.deleteAccountConfirm,
             ),
             const SizedBox(height: 16),
             Container(
@@ -836,7 +848,7 @@ class AccountsTab extends StatelessWidget {
             if (transactionCount > 0) ...[
               const SizedBox(height: 12),
               Text(
-                'This action cannot be undone.',
+                AppStrings.actionCannotBeUndone,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.error,
                   fontWeight: FontWeight.w600,
@@ -848,7 +860,7 @@ class AccountsTab extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -858,8 +870,11 @@ class AccountsTab extends StatelessWidget {
                 SnackBar(
                   content: Text(
                     transactionCount > 0
-                        ? 'Account and $transactionCount transaction${transactionCount > 1 ? 's' : ''} deleted'
-                        : 'Account deleted',
+                        ? AppStrings.format(
+                            AppStrings.accountAndTransactionsDeleted,
+                            [transactionCount.toString()],
+                          )
+                        : AppStrings.accountDeleted,
                   ),
                   duration: const Duration(seconds: 3),
                 ),
@@ -868,7 +883,7 @@ class AccountsTab extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: theme.colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -939,7 +954,7 @@ class AccountsTab extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Add Account',
+                    AppStrings.addAccount,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -949,7 +964,7 @@ class AccountsTab extends StatelessWidget {
                     controller: nameController,
                     autofocus: true,
                     decoration: InputDecoration(
-                      labelText: 'Account Name',
+                      labelText: AppStrings.accountName,
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
@@ -963,7 +978,7 @@ class AccountsTab extends StatelessWidget {
                     controller: balanceController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'Initial Balance',
+                      labelText: AppStrings.initialBalance,
                       prefixText: '$currencySymbol ',
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -979,7 +994,7 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Account Type',
+                    AppStrings.accountType,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -1007,7 +1022,7 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Color',
+                    AppStrings.color,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -1059,7 +1074,7 @@ class AccountsTab extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Cancel'),
+                          child: Text(AppStrings.cancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1093,7 +1108,7 @@ class AccountsTab extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Add Account'),
+                          child: Text(AppStrings.addAccount),
                         ),
                       ),
                     ],

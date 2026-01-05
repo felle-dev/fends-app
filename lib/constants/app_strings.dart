@@ -8,6 +8,7 @@ class AppStrings {
     _localizations = AppLocalizations.of(context);
   }
 
+  // Security
   static String get security =>
       _localizations?.translate('security') ?? 'Security';
   static String get biometricLock =>
@@ -29,6 +30,7 @@ class AppStrings {
       _localizations?.translate('authenticationFailed') ??
       'Authentication failed: {}';
 
+  // Appearance
   static String get appearance =>
       _localizations?.translate('appearance') ?? 'Appearance';
   static String get theme => _localizations?.translate('theme') ?? 'Theme';
@@ -61,6 +63,7 @@ class AppStrings {
   static String get themeChangedTo =>
       _localizations?.translate('themeChangedTo') ?? 'Theme changed to {}';
 
+  // Language
   static String get language =>
       _localizations?.translate('language') ?? 'Language';
   static String get changeLanguage =>
@@ -75,7 +78,7 @@ class AppStrings {
       _localizations?.translate('languageChangedTo') ??
       'Language changed to {}';
 
-  // Add all other strings similarly...
+  // Categories
   static String get categories =>
       _localizations?.translate('categories') ?? 'Categories';
   static String get manageCategories =>
@@ -120,11 +123,18 @@ class AppStrings {
       _localizations?.translate('expenseCategories') ?? 'EXPENSE CATEGORIES';
   static String get incomeCategories =>
       _localizations?.translate('incomeCategories') ?? 'INCOME CATEGORIES';
+
+  // Actions
   static String get add => _localizations?.translate('add') ?? 'Add';
   static String get update => _localizations?.translate('update') ?? 'Update';
   static String get edit => _localizations?.translate('edit') ?? 'Edit';
   static String get delete => _localizations?.translate('delete') ?? 'Delete';
+  static String get cancel => _localizations?.translate('cancel') ?? 'Cancel';
+  static String get close => _localizations?.translate('close') ?? 'Close';
+  static String get import => _localizations?.translate('import') ?? 'Import';
+  static String get reset => _localizations?.translate('reset') ?? 'Reset';
 
+  // Data Management
   static String get dataManagement =>
       _localizations?.translate('dataManagement') ?? 'Data Management';
   static String get exportData =>
@@ -158,8 +168,8 @@ class AppStrings {
   static String get exportFunctionNotAvailable =>
       _localizations?.translate('exportFunctionNotAvailable') ??
       'Export function not available';
-  static String get import => _localizations?.translate('import') ?? 'Import';
 
+  // App Information
   static String get appInformation =>
       _localizations?.translate('appInformation') ?? 'App Information';
   static String get about => _localizations?.translate('about') ?? 'About';
@@ -179,8 +189,8 @@ class AppStrings {
   static String get privacyMessage =>
       _localizations?.translate('privacyMessage') ??
       'All your financial data is stored locally';
-  static String get close => _localizations?.translate('close') ?? 'Close';
 
+  // Danger Zone
   static String get dangerZone =>
       _localizations?.translate('dangerZone') ?? 'Danger Zone';
   static String get resetAllData =>
@@ -193,9 +203,8 @@ class AppStrings {
   static String get resetWarning =>
       _localizations?.translate('resetWarning') ??
       'Are you sure you want to delete all data?';
-  static String get reset => _localizations?.translate('reset') ?? 'Reset';
-  static String get cancel => _localizations?.translate('cancel') ?? 'Cancel';
 
+  // Transactions
   static String get transactions =>
       _localizations?.translate('transactions') ?? 'Transactions';
   static String get totalTransactions =>
@@ -240,14 +249,64 @@ class AppStrings {
       _localizations?.translate('saveChanges') ?? 'Save Changes';
   static String get transfer =>
       _localizations?.translate('transfer') ?? 'Transfer';
-
   static String get date => _localizations?.translate('date') ?? 'Date';
-
   static String get totalCount =>
       _localizations?.translate('totalCount') ?? '{} total';
-
   static String get category =>
       _localizations?.translate('category') ?? 'Category';
+  static String get transactionCount =>
+      _localizations?.translate('transactionCount') ?? '{} Transaction{}';
+
+  // Accounts
+  static String get accounts =>
+      _localizations?.translate('accounts') ?? 'Accounts';
+  static String get noAccountsYet =>
+      _localizations?.translate('noAccountsYet') ?? 'No accounts yet';
+  static String get addFirstAccount =>
+      _localizations?.translate('addFirstAccount') ??
+      'Add your first account to start tracking';
+  static String get totalNetWorth =>
+      _localizations?.translate('totalNetWorth') ?? 'Total Net Worth';
+  static String get acrossAccounts =>
+      _localizations?.translate('acrossAccounts') ?? 'across {} account{}';
+  static String get addAccount =>
+      _localizations?.translate('addAccount') ?? 'Add Account';
+  static String get deleteAccount =>
+      _localizations?.translate('deleteAccount') ?? 'Delete Account';
+  static String get deleteAccountQuestion =>
+      _localizations?.translate('deleteAccountQuestion') ?? 'Delete Account?';
+  static String get deleteAccountConfirm =>
+      _localizations?.translate('deleteAccountConfirm') ??
+      'Are you sure you want to delete this account?';
+  static String get deleteAccountWithTransactionsWarning =>
+      _localizations?.translate('deleteAccountWithTransactionsWarning') ??
+      'This account has {} transaction{}. Deleting this account will also delete all associated transactions.';
+  static String get mustHaveOneAccount =>
+      _localizations?.translate('mustHaveOneAccount') ??
+      'You must have at least one account';
+  static String get cannotDeleteLastAccount =>
+      _localizations?.translate('cannotDeleteLastAccount') ??
+      'Cannot delete last account';
+  static String get accountDeleted =>
+      _localizations?.translate('accountDeleted') ?? 'Account deleted';
+  static String get accountAndTransactionsDeleted =>
+      _localizations?.translate('accountAndTransactionsDeleted') ??
+      'Account and {} transaction{} deleted';
+  static String get accountName =>
+      _localizations?.translate('accountName') ?? 'Account Name';
+  static String get initialBalance =>
+      _localizations?.translate('initialBalance') ?? 'Initial Balance';
+  static String get accountType =>
+      _localizations?.translate('accountType') ?? 'Account Type';
+  static String get currentBalance =>
+      _localizations?.translate('currentBalance') ?? 'Current Balance';
+  static String get initial =>
+      _localizations?.translate('initial') ?? 'Initial';
+  static String get netChange =>
+      _localizations?.translate('netChange') ?? 'Net Change';
+  static String get actionCannotBeUndone =>
+      _localizations?.translate('actionCannotBeUndone') ??
+      'This action cannot be undone.';
 
   static String format(String template, List<String> args) {
     String result = template;

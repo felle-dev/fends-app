@@ -14,6 +14,7 @@ class AppLocalizations {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
+      // Transactions
       'transactions': 'Transactions',
       'totalTransactions': '{} total',
       'noTransactionsInPeriod': 'No transactions in this period',
@@ -41,6 +42,31 @@ class AppLocalizations {
       'saveChanges': 'Save Changes',
       'transfer': 'Transfer',
       'totalCount': '{} total',
+      'transactionCount': '{} Transaction{}',
+
+      // Accounts
+      'accounts': 'Accounts',
+      'noAccountsYet': 'No accounts yet',
+      'addFirstAccount': 'Add your first account to start tracking',
+      'totalNetWorth': 'Total Net Worth',
+      'acrossAccounts': 'across {} account{}',
+      'addAccount': 'Add Account',
+      'deleteAccount': 'Delete Account',
+      'deleteAccountQuestion': 'Delete Account?',
+      'deleteAccountConfirm': 'Are you sure you want to delete this account?',
+      'deleteAccountWithTransactionsWarning':
+          'This account has {} transaction{}. Deleting this account will also delete all associated transactions.',
+      'mustHaveOneAccount': 'You must have at least one account',
+      'cannotDeleteLastAccount': 'Cannot delete last account',
+      'accountDeleted': 'Account deleted',
+      'accountAndTransactionsDeleted': 'Account and {} transaction{} deleted',
+      'accountName': 'Account Name',
+      'initialBalance': 'Initial Balance',
+      'accountType': 'Account Type',
+      'currentBalance': 'Current Balance',
+      'initial': 'Initial',
+      'netChange': 'Net Change',
+      'actionCannotBeUndone': 'This action cannot be undone.',
 
       // Security
       'security': 'Security',
@@ -148,6 +174,7 @@ class AppLocalizations {
       'cancel': 'Cancel',
     },
     'id': {
+      // Transactions
       'transactions': 'Transaksi',
       'totalTransactions': '{} total',
       'noTransactionsInPeriod': 'Tidak ada transaksi di periode ini',
@@ -175,6 +202,31 @@ class AppLocalizations {
       'saveChanges': 'Simpan Perubahan',
       'transfer': 'Transfer',
       'totalCount': '{} total',
+      'transactionCount': '{} Transaksi',
+
+      // Accounts
+      'accounts': 'Akun',
+      'noAccountsYet': 'Belum ada akun',
+      'addFirstAccount': 'Tambahkan akun pertama Anda untuk mulai melacak',
+      'totalNetWorth': 'Total Kekayaan Bersih',
+      'acrossAccounts': 'dari {} akun',
+      'addAccount': 'Tambah Akun',
+      'deleteAccount': 'Hapus Akun',
+      'deleteAccountQuestion': 'Hapus Akun?',
+      'deleteAccountConfirm': 'Apakah Anda yakin ingin menghapus akun ini?',
+      'deleteAccountWithTransactionsWarning':
+          'Akun ini memiliki {} transaksi. Menghapus akun ini juga akan menghapus semua transaksi terkait.',
+      'mustHaveOneAccount': 'Anda harus memiliki setidaknya satu akun',
+      'cannotDeleteLastAccount': 'Tidak dapat menghapus akun terakhir',
+      'accountDeleted': 'Akun dihapus',
+      'accountAndTransactionsDeleted': 'Akun dan {} transaksi dihapus',
+      'accountName': 'Nama Akun',
+      'initialBalance': 'Saldo Awal',
+      'accountType': 'Tipe Akun',
+      'currentBalance': 'Saldo Saat Ini',
+      'initial': 'Awal',
+      'netChange': 'Perubahan Bersih',
+      'actionCannotBeUndone': 'Tindakan ini tidak dapat dibatalkan.',
 
       // Security
       'security': 'Keamanan',
