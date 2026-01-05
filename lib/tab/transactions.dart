@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
+import 'package:fends/constants/app_strings.dart';
 
 class TransactionsTab extends StatefulWidget {
   final String currency;
@@ -36,7 +37,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
     } catch (e) {
       return Category(
         id: 'unknown',
-        name: 'Unknown Category',
+        name: AppStrings.unknownCategory,
         icon: Icons.help_outline,
         color: Colors.grey,
         isExpense: true,
@@ -133,6 +134,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
     final sortedTransactions = _getFilteredTransactions()
       ..sort((a, b) => b.date.compareTo(a.date));
@@ -165,13 +167,15 @@ class _TransactionsTabState extends State<TransactionsTab> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Transactions',
+              AppStrings.transactions,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              '${sortedTransactions.length} total',
+              AppStrings.format(AppStrings.totalCount, [
+                sortedTransactions.length.toString(),
+              ]),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -194,7 +198,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No transactions in this period',
+                    AppStrings.noTransactionsInPeriod,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -256,7 +260,9 @@ class _TransactionsTabState extends State<TransactionsTab> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isTransfer ? 'Transfer' : category.name,
+                                isTransfer
+                                    ? AppStrings.transfer
+                                    : category.name,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -328,21 +334,21 @@ class _TransactionsTabState extends State<TransactionsTab> {
 
   Widget _buildPeriodSelector(ThemeData theme) {
     return SegmentedButton<String>(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: 'week',
-          label: Text('Week'),
-          icon: Icon(Icons.calendar_view_week),
+          label: Text(AppStrings.week),
+          icon: const Icon(Icons.calendar_view_week),
         ),
         ButtonSegment(
           value: 'month',
-          label: Text('Month'),
-          icon: Icon(Icons.calendar_month),
+          label: Text(AppStrings.month),
+          icon: const Icon(Icons.calendar_month),
         ),
         ButtonSegment(
           value: 'all',
-          label: Text('All Time'),
-          icon: Icon(Icons.calendar_today),
+          label: Text(AppStrings.allTime),
+          icon: const Icon(Icons.calendar_today),
         ),
       ],
       selected: {_selectedPeriod},
@@ -371,10 +377,14 @@ class _TransactionsTabState extends State<TransactionsTab> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.trending_down, color: Colors.red, size: 20),
+                    const Icon(
+                      Icons.trending_down,
+                      color: Colors.red,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
-                      'Spent',
+                      AppStrings.spent,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -410,10 +420,14 @@ class _TransactionsTabState extends State<TransactionsTab> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.trending_up, color: Colors.green, size: 20),
+                    const Icon(
+                      Icons.trending_up,
+                      color: Colors.green,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
-                      'Income',
+                      AppStrings.income,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -459,7 +473,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Weekly Trend',
+              AppStrings.weeklyTrend,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -526,9 +540,9 @@ class _TransactionsTabState extends State<TransactionsTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem(theme, Colors.green, 'Income'),
+                _buildLegendItem(theme, Colors.green, AppStrings.income),
                 const SizedBox(width: 24),
-                _buildLegendItem(theme, Colors.red, 'Expenses'),
+                _buildLegendItem(theme, Colors.red, AppStrings.expenses),
               ],
             ),
           ],
@@ -577,7 +591,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Top Categories',
+              AppStrings.topCategories,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -688,7 +702,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                 ),
                 ListTile(
                   leading: Icon(Icons.edit, color: theme.colorScheme.primary),
-                  title: const Text('Edit Transaction'),
+                  title: Text(AppStrings.editTransaction),
                   onTap: () {
                     Navigator.pop(context);
                     _showEditTransactionDialog(context, transaction);
@@ -696,7 +710,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                 ),
                 ListTile(
                   leading: Icon(Icons.delete, color: theme.colorScheme.error),
-                  title: const Text('Delete Transaction'),
+                  title: Text(AppStrings.deleteTransaction),
                   onTap: () {
                     Navigator.pop(context);
                     _showDeleteConfirmationDialog(context, transaction);
@@ -704,7 +718,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.close),
-                  title: const Text('Cancel'),
+                  title: Text(AppStrings.cancel),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -725,12 +739,12 @@ class _TransactionsTabState extends State<TransactionsTab> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Transaction'),
+        title: Text(AppStrings.deleteTransaction),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Are you sure you want to delete this transaction?'),
+            Text(AppStrings.deleteTransactionConfirm),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -776,23 +790,23 @@ class _TransactionsTabState extends State<TransactionsTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.cancel),
           ),
           FilledButton(
             onPressed: () {
               widget.onDeleteTransaction(transaction.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Transaction deleted'),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  content: Text(AppStrings.transactionDeleted),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
             style: FilledButton.styleFrom(
               backgroundColor: theme.colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -857,28 +871,28 @@ class _TransactionsTabState extends State<TransactionsTab> {
                     ),
                   ),
                   Text(
-                    'Edit Transaction',
+                    AppStrings.editTransaction,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 24),
                   SegmentedButton<String>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: 'expense',
-                        label: Text('Expense'),
-                        icon: Icon(Icons.remove_circle_outline),
+                        label: Text(AppStrings.expense),
+                        icon: const Icon(Icons.remove_circle_outline),
                       ),
                       ButtonSegment(
                         value: 'income',
-                        label: Text('Income'),
-                        icon: Icon(Icons.add_circle_outline),
+                        label: Text(AppStrings.income),
+                        icon: const Icon(Icons.add_circle_outline),
                       ),
                       ButtonSegment(
                         value: 'transfer',
-                        label: Text('Transfer'),
-                        icon: Icon(Icons.swap_horiz),
+                        label: Text(AppStrings.transfer),
+                        icon: const Icon(Icons.swap_horiz),
                       ),
                     ],
                     selected: {transactionType},
@@ -910,7 +924,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Amount',
+                          AppStrings.amount,
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
@@ -954,8 +968,8 @@ class _TransactionsTabState extends State<TransactionsTab> {
                     children: [
                       Text(
                         transactionType == 'transfer'
-                            ? 'From Account'
-                            : 'Account',
+                            ? AppStrings.fromAccount
+                            : AppStrings.account,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: theme.colorScheme.onSurface,
@@ -1013,7 +1027,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'To Account',
+                          AppStrings.toAccount,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface,
@@ -1081,7 +1095,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Category',
+                          AppStrings.category,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface,
@@ -1179,7 +1193,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Date',
+                                  AppStrings.date,
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -1208,7 +1222,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                   TextField(
                     controller: noteController,
                     decoration: InputDecoration(
-                      labelText: 'Note (optional)',
+                      labelText: AppStrings.noteOptional,
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
@@ -1234,7 +1248,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Cancel'),
+                          child: Text(AppStrings.cancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1263,9 +1277,9 @@ class _TransactionsTabState extends State<TransactionsTab> {
                             Navigator.pop(context);
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Transaction updated'),
-                                duration: Duration(seconds: 2),
+                              SnackBar(
+                                content: Text(AppStrings.transactionUpdated),
+                                duration: const Duration(seconds: 2),
                               ),
                             );
                           },
@@ -1275,7 +1289,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Save Changes'),
+                          child: Text(AppStrings.saveChanges),
                         ),
                       ),
                     ],

@@ -1,3 +1,4 @@
+import 'package:fends/manager/language_manager.dart';
 import 'package:fends/manager/theme_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' hide Category;
@@ -5,10 +6,12 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+// ignore: depend_on_referenced_packages
 import 'package:path_provider/path_provider.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:io';
 import 'package:fends/model.dart';
+import 'package:fends/constants/app_strings.dart';
 
 class SettingsTab extends StatefulWidget {
   final Future<void> Function(String)? onImportData;
@@ -93,7 +96,7 @@ class _SettingsTabState extends State<SettingsTab> {
     if (value) {
       try {
         final authenticated = await _localAuth.authenticate(
-          localizedReason: 'Authenticate to enable biometric lock',
+          localizedReason: AppStrings.authenticateToEnable,
           options: const AuthenticationOptions(
             stickyAuth: true,
             biometricOnly: false,
@@ -104,7 +107,11 @@ class _SettingsTabState extends State<SettingsTab> {
           widget.onBiometricChanged?.call(true);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('$_biometricType authentication enabled'),
+              content: Text(
+                AppStrings.format(AppStrings.authenticationEnabled, [
+                  _biometricType,
+                ]),
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
@@ -114,7 +121,11 @@ class _SettingsTabState extends State<SettingsTab> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Authentication failed: $e'),
+              content: Text(
+                AppStrings.format(AppStrings.authenticationFailed, [
+                  e.toString(),
+                ]),
+              ),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 3),
             ),
@@ -126,7 +137,11 @@ class _SettingsTabState extends State<SettingsTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$_biometricType authentication disabled'),
+            content: Text(
+              AppStrings.format(AppStrings.authenticationDisabled, [
+                _biometricType,
+              ]),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -136,6 +151,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
 
     return ListView(
@@ -166,7 +182,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Security',
+                        AppStrings.security,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.primary,
@@ -188,11 +204,13 @@ class _SettingsTabState extends State<SettingsTab> {
                       color: theme.colorScheme.primary,
                     ),
                   ),
-                  title: Text('$_biometricType Lock'),
+                  title: Text('$_biometricType ${AppStrings.biometricLock}'),
                   subtitle: Text(
                     (widget.biometricEnabled ?? false)
-                        ? 'App is locked with $_biometricType'
-                        : 'Require $_biometricType to open app',
+                        ? '${AppStrings.appIsLockedWith} $_biometricType'
+                        : AppStrings.format(AppStrings.requireToOpenApp, [
+                            _biometricType,
+                          ]),
                   ),
                   value: widget.biometricEnabled ?? false,
                   onChanged: widget.onBiometricChanged != null
@@ -206,6 +224,9 @@ class _SettingsTabState extends State<SettingsTab> {
         ],
 
         _buildThemeSection(context),
+        const SizedBox(height: 16),
+
+        _buildLanguageSection(context),
         const SizedBox(height: 16),
 
         // Categories Management Section
@@ -233,7 +254,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Categories',
+                        AppStrings.categories,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.primary,
@@ -255,8 +276,12 @@ class _SettingsTabState extends State<SettingsTab> {
                       color: theme.colorScheme.primary,
                     ),
                   ),
-                  title: const Text('Manage Categories'),
-                  subtitle: Text('${widget.categories!.length} categories'),
+                  title: Text(AppStrings.manageCategories),
+                  subtitle: Text(
+                    AppStrings.format(AppStrings.categoriesCount, [
+                      widget.categories!.length.toString(),
+                    ]),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showCategoriesManagement(context),
                 ),
@@ -290,7 +315,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Data Management',
+                      AppStrings.dataManagement,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -309,8 +334,8 @@ class _SettingsTabState extends State<SettingsTab> {
                   ),
                   child: const Icon(Icons.upload_file, color: Colors.green),
                 ),
-                title: const Text('Export Data'),
-                subtitle: const Text('Save your data as a backup file'),
+                title: Text(AppStrings.exportData),
+                subtitle: Text(AppStrings.saveDataBackup),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _handleExport(context),
               ),
@@ -328,8 +353,8 @@ class _SettingsTabState extends State<SettingsTab> {
                   ),
                   child: const Icon(Icons.download, color: Colors.blue),
                 ),
-                title: const Text('Import Data'),
-                subtitle: const Text('Restore from a backup file'),
+                title: Text(AppStrings.importData),
+                subtitle: Text(AppStrings.restoreFromBackup),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _handleImport(context),
               ),
@@ -362,7 +387,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'App Information',
+                      AppStrings.appInformation,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -384,14 +409,14 @@ class _SettingsTabState extends State<SettingsTab> {
                     color: theme.colorScheme.primary,
                   ),
                 ),
-                title: const Text('About'),
-                subtitle: const Text('App version and information'),
+                title: Text(AppStrings.about),
+                subtitle: Text(AppStrings.appVersionInfo),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   showAboutDialog(
                     context: context,
-                    applicationName: 'Fends',
-                    applicationVersion: '1.0.0',
+                    applicationName: AppStrings.appName,
+                    applicationVersion: AppStrings.appVersion,
                     applicationIcon: Container(
                       width: 64,
                       height: 64,
@@ -407,9 +432,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                     children: [
                       const SizedBox(height: 16),
-                      const Text(
-                        'A simple and beautiful budget tracking app to help you manage your finances.',
-                      ),
+                      Text(AppStrings.appDescription),
                     ],
                   );
                 },
@@ -431,25 +454,21 @@ class _SettingsTabState extends State<SettingsTab> {
                     color: Colors.orange,
                   ),
                 ),
-                title: const Text('Privacy Policy'),
-                subtitle: const Text('How we handle your data'),
+                title: Text(AppStrings.privacyPolicy),
+                subtitle: Text(AppStrings.howWeHandleData),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Privacy Policy'),
-                      content: const SingleChildScrollView(
-                        child: Text(
-                          'All your financial data is stored locally on your device. '
-                          'We do not collect, transmit, or store any of your personal '
-                          'information on external servers. Your privacy is our priority.',
-                        ),
+                      title: Text(AppStrings.privacyPolicy),
+                      content: SingleChildScrollView(
+                        child: Text(AppStrings.privacyMessage),
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Close'),
+                          child: Text(AppStrings.close),
                         ),
                       ],
                     ),
@@ -482,7 +501,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Danger Zone',
+                      AppStrings.dangerZone,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
@@ -501,8 +520,8 @@ class _SettingsTabState extends State<SettingsTab> {
                   ),
                   child: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
-                title: const Text('Reset All Data'),
-                subtitle: const Text('Delete all transactions and accounts'),
+                title: Text(AppStrings.resetAllData),
+                subtitle: Text(AppStrings.deleteAllTransactions),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   showDialog(
@@ -513,16 +532,12 @@ class _SettingsTabState extends State<SettingsTab> {
                         color: Colors.red,
                         size: 48,
                       ),
-                      title: const Text('Reset All Data?'),
-                      content: const Text(
-                        'Are you sure you want to delete all transactions and accounts? '
-                        'This action cannot be undone.\n\n'
-                        'Consider exporting your data first as a backup.',
-                      ),
+                      title: Text(AppStrings.resetDataQuestion),
+                      content: Text(AppStrings.resetWarning),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
+                          child: Text(AppStrings.cancel),
                         ),
                         FilledButton(
                           onPressed: () {
@@ -534,7 +549,7 @@ class _SettingsTabState extends State<SettingsTab> {
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.red,
                           ),
-                          child: const Text('Reset'),
+                          child: Text(AppStrings.reset),
                         ),
                       ],
                     ),
@@ -546,6 +561,178 @@ class _SettingsTabState extends State<SettingsTab> {
         ),
         const SizedBox(height: 100),
       ],
+    );
+  }
+
+  Widget _buildLanguageSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final languageManager = Provider.of<LanguageManager>(context);
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surface,
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.language_outlined,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  AppStrings.language,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: theme.colorScheme.outlineVariant),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.translate, color: theme.colorScheme.primary),
+            ),
+            title: Text(AppStrings.changeLanguage),
+            subtitle: Text(
+              '${AppStrings.currentLanguage}: ${languageManager.getLanguageLabel()}',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showLanguageDialog(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final languageManager = Provider.of<LanguageManager>(
+      context,
+      listen: false,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle and header
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                          0.4,
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    AppStrings.changeLanguage,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+
+            // Language options
+            _buildLanguageOption(
+              context,
+              theme,
+              languageManager,
+              'en',
+              AppStrings.english,
+              'English',
+            ),
+            Divider(
+              height: 1,
+              indent: 72,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            _buildLanguageOption(
+              context,
+              theme,
+              languageManager,
+              'id',
+              AppStrings.indonesian,
+              'Bahasa Indonesia',
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(
+    BuildContext context,
+    ThemeData theme,
+    LanguageManager languageManager,
+    String languageCode,
+    String title,
+    String subtitle,
+  ) {
+    final isSelected = languageManager.languageCode == languageCode;
+
+    return ListTile(
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      subtitle: Text(subtitle),
+      trailing: isSelected
+          ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+          : Icon(
+              Icons.circle_outlined,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+            ),
+      onTap: () async {
+        await languageManager.setLanguage(languageCode);
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppStrings.format(AppStrings.languageChangedTo, [title]),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -573,7 +760,7 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Appearance',
+                  AppStrings.appearance,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -601,7 +788,7 @@ class _SettingsTabState extends State<SettingsTab> {
                 color: theme.colorScheme.primary,
               ),
             ),
-            title: const Text('Theme'),
+            title: Text(AppStrings.theme),
             subtitle: Text(themeManager.getThemeModeLabel()),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showThemeModeDialog(context),
@@ -623,11 +810,11 @@ class _SettingsTabState extends State<SettingsTab> {
               ),
               child: Icon(Icons.colorize, color: theme.colorScheme.primary),
             ),
-            title: const Text('Material You'),
+            title: Text(AppStrings.materialYou),
             subtitle: Text(
               themeManager.useDynamicColor
-                  ? 'Using system colors'
-                  : 'Using default colors',
+                  ? AppStrings.usingSystemColors
+                  : AppStrings.usingDefaultColors,
             ),
             value: themeManager.useDynamicColor,
             onChanged: (value) {
@@ -636,8 +823,8 @@ class _SettingsTabState extends State<SettingsTab> {
                 SnackBar(
                   content: Text(
                     value
-                        ? 'Dynamic colors enabled'
-                        : 'Dynamic colors disabled',
+                        ? AppStrings.dynamicColorsEnabled
+                        : AppStrings.dynamicColorsDisabled,
                   ),
                   duration: const Duration(seconds: 2),
                 ),
@@ -683,7 +870,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                   ),
                   Text(
-                    'Choose Theme',
+                    AppStrings.chooseTheme,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -700,8 +887,8 @@ class _SettingsTabState extends State<SettingsTab> {
               themeManager,
               ThemeMode.light,
               Icons.light_mode,
-              'Light',
-              'Always use light theme',
+              AppStrings.light,
+              AppStrings.alwaysUseLightTheme,
               Colors.amber,
             ),
             Divider(
@@ -715,8 +902,8 @@ class _SettingsTabState extends State<SettingsTab> {
               themeManager,
               ThemeMode.dark,
               Icons.dark_mode,
-              'Dark',
-              'Always use dark theme',
+              AppStrings.dark,
+              AppStrings.alwaysUseDarkTheme,
               Colors.indigo,
             ),
             Divider(
@@ -730,8 +917,8 @@ class _SettingsTabState extends State<SettingsTab> {
               themeManager,
               ThemeMode.system,
               Icons.brightness_auto,
-              'System',
-              'Follow system settings',
+              AppStrings.system,
+              AppStrings.followSystemSettings,
               Colors.purple,
             ),
             const SizedBox(height: 24),
@@ -780,7 +967,9 @@ class _SettingsTabState extends State<SettingsTab> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Theme changed to $title'),
+            content: Text(
+              AppStrings.format(AppStrings.themeChangedTo, [title]),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -826,7 +1015,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Manage Categories',
+                          AppStrings.manageCategories,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -838,7 +1027,7 @@ class _SettingsTabState extends State<SettingsTab> {
                             onSuccess: () => setModalState(() {}),
                           ),
                           icon: const Icon(Icons.add, size: 20),
-                          label: const Text('Add'),
+                          label: Text(AppStrings.add),
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -859,7 +1048,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   children: [
                     // Expense categories
                     Text(
-                      'EXPENSE CATEGORIES',
+                      AppStrings.expenseCategories,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
@@ -879,7 +1068,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     const SizedBox(height: 24),
                     // Income categories
                     Text(
-                      'INCOME CATEGORIES',
+                      AppStrings.incomeCategories,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
@@ -936,7 +1125,9 @@ class _SettingsTabState extends State<SettingsTab> {
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          isDefaultCategory ? 'Default category' : 'Custom category',
+          isDefaultCategory
+              ? AppStrings.defaultCategory
+              : AppStrings.customCategory,
           style: TextStyle(
             fontSize: 12,
             color: theme.colorScheme.onSurfaceVariant,
@@ -949,7 +1140,7 @@ class _SettingsTabState extends State<SettingsTab> {
               icon: const Icon(Icons.edit_outlined, size: 20),
               onPressed: () =>
                   _showAddEditCategory(context, category, onSuccess: onUpdate),
-              tooltip: 'Edit',
+              tooltip: AppStrings.edit,
             ),
             if (category.isDeletable)
               IconButton(
@@ -960,7 +1151,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   category,
                   onSuccess: onUpdate,
                 ),
-                tooltip: 'Delete',
+                tooltip: AppStrings.delete,
               ),
           ],
         ),
@@ -1071,7 +1262,9 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                   ),
                   Text(
-                    isEditing ? 'Edit Category' : 'Add Category',
+                    isEditing
+                        ? AppStrings.editCategory
+                        : AppStrings.addCategory,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -1080,23 +1273,23 @@ class _SettingsTabState extends State<SettingsTab> {
 
                   // Category type
                   Text(
-                    'Type',
+                    AppStrings.type,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 12),
                   SegmentedButton<bool>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: true,
-                        label: Text('Expense'),
-                        icon: Icon(Icons.remove_circle_outline),
+                        label: Text(AppStrings.expense),
+                        icon: const Icon(Icons.remove_circle_outline),
                       ),
                       ButtonSegment(
                         value: false,
-                        label: Text('Income'),
-                        icon: Icon(Icons.add_circle_outline),
+                        label: Text(AppStrings.income),
+                        icon: const Icon(Icons.add_circle_outline),
                       ),
                     ],
                     selected: {isExpense},
@@ -1110,7 +1303,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(
-                      labelText: 'Category Name',
+                      labelText: AppStrings.categoryName,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1121,7 +1314,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
                   // Icon selector
                   Text(
-                    'Icon',
+                    AppStrings.icon,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1181,7 +1374,7 @@ class _SettingsTabState extends State<SettingsTab> {
 
                   // Color selector
                   Text(
-                    'Color',
+                    AppStrings.color,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1246,7 +1439,7 @@ class _SettingsTabState extends State<SettingsTab> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Preview',
+                                AppStrings.preview,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -1254,14 +1447,16 @@ class _SettingsTabState extends State<SettingsTab> {
                               const SizedBox(height: 4),
                               Text(
                                 nameController.text.isEmpty
-                                    ? 'Category Name'
+                                    ? AppStrings.categoryName
                                     : nameController.text,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
-                                isExpense ? 'Expense' : 'Income',
+                                isExpense
+                                    ? AppStrings.expense
+                                    : AppStrings.income,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -1286,7 +1481,7 @@ class _SettingsTabState extends State<SettingsTab> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Cancel'),
+                          child: Text(AppStrings.cancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1296,8 +1491,10 @@ class _SettingsTabState extends State<SettingsTab> {
                           onPressed: () {
                             if (nameController.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please enter a category name'),
+                                SnackBar(
+                                  content: Text(
+                                    AppStrings.pleaseEnterCategoryName,
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -1328,8 +1525,8 @@ class _SettingsTabState extends State<SettingsTab> {
                               SnackBar(
                                 content: Text(
                                   isEditing
-                                      ? 'Category updated successfully'
-                                      : 'Category added successfully',
+                                      ? AppStrings.categoryUpdatedSuccess
+                                      : AppStrings.categoryAddedSuccess,
                                 ),
                                 backgroundColor: Colors.green,
                                 duration: const Duration(seconds: 2),
@@ -1342,7 +1539,9 @@ class _SettingsTabState extends State<SettingsTab> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Text(isEditing ? 'Update' : 'Add Category'),
+                          child: Text(
+                            isEditing ? AppStrings.update : AppStrings.add,
+                          ),
                         ),
                       ),
                     ],
@@ -1383,32 +1582,30 @@ class _SettingsTabState extends State<SettingsTab> {
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.warning_rounded, color: Colors.orange, size: 48),
-        title: const Text('Delete Category?'),
+        title: Text(AppStrings.deleteCategory),
         content: Text(
-          'Are you sure you want to delete "${category.name}"?\n\n'
-          'Transactions with this category will not be deleted, '
-          'but will need to be recategorized.',
+          AppStrings.format(AppStrings.deleteCategoryConfirm, [category.name]),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.cancel),
           ),
           FilledButton(
             onPressed: () {
               widget.onDeleteCategory?.call(category.id);
               Navigator.pop(context);
-              onSuccess?.call(); // Call the callback to refresh the list
+              onSuccess?.call();
 
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Category deleted'),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  content: Text(AppStrings.categoryDeleted),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -1418,7 +1615,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _handleExport(BuildContext context) async {
     try {
       if (widget.onExportData == null) {
-        _showErrorSnackBar(context, 'Export function not available');
+        _showErrorSnackBar(context, AppStrings.exportFunctionNotAvailable);
         return;
       }
 
@@ -1453,16 +1650,19 @@ class _SettingsTabState extends State<SettingsTab> {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Data exported successfully'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(AppStrings.dataExportedSuccess),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading if still open
-        _showErrorSnackBar(context, 'Failed to export data: $e');
+        _showErrorSnackBar(
+          context,
+          AppStrings.format(AppStrings.exportFailed, [e.toString()]),
+        );
       }
     }
   }
@@ -1488,7 +1688,7 @@ class _SettingsTabState extends State<SettingsTab> {
         json.decode(jsonString);
       } catch (e) {
         if (context.mounted) {
-          _showErrorSnackBar(context, 'Invalid backup file format');
+          _showErrorSnackBar(context, AppStrings.invalidBackupFile);
         }
         return;
       }
@@ -1503,20 +1703,16 @@ class _SettingsTabState extends State<SettingsTab> {
               color: Colors.orange,
               size: 48,
             ),
-            title: const Text('Import Data?'),
-            content: const Text(
-              'This will replace all your current data with the data from the backup file. '
-              'This action cannot be undone.\n\n'
-              'Consider exporting your current data first.',
-            ),
+            title: Text(AppStrings.importDataQuestion),
+            content: Text(AppStrings.importWarning),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(AppStrings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Import'),
+                child: Text(AppStrings.import),
               ),
             ],
           ),
@@ -1541,9 +1737,9 @@ class _SettingsTabState extends State<SettingsTab> {
 
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Data imported successfully'),
-                duration: Duration(seconds: 2),
+              SnackBar(
+                content: Text(AppStrings.dataImportedSuccess),
+                duration: const Duration(seconds: 2),
               ),
             );
           }
@@ -1551,7 +1747,10 @@ class _SettingsTabState extends State<SettingsTab> {
       }
     } catch (e) {
       if (context.mounted) {
-        _showErrorSnackBar(context, 'Failed to import data: $e');
+        _showErrorSnackBar(
+          context,
+          AppStrings.format(AppStrings.importFailed, [e.toString()]),
+        );
       }
     }
   }

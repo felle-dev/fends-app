@@ -185,6 +185,13 @@ class OverviewTab extends StatelessWidget {
         const SizedBox(height: 24),
         _buildCategoryBreakdown(theme),
         const SizedBox(height: 12),
+        Text(
+          'Budget Runway',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
         _buildBudgetRunwayCard(theme),
         const SizedBox(height: 100),
       ],
@@ -554,44 +561,6 @@ class OverviewTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: willRunOutBeforeFinalDate
-                        ? Colors.orange.withOpacity(0.1)
-                        : theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: willRunOutBeforeFinalDate
-                          ? Colors.orange.withOpacity(0.3)
-                          : theme.colorScheme.outline.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    willRunOutBeforeFinalDate
-                        ? Icons.warning_amber_rounded
-                        : Icons.trending_up_rounded,
-                    color: willRunOutBeforeFinalDate
-                        ? Colors.orange
-                        : theme.colorScheme.secondary,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Budget Runway',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
             if (_averageDailySpending > 0 && runoutDate != null) ...[
               Row(
                 children: [

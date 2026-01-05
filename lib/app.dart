@@ -1,9 +1,12 @@
 import 'package:fends/manager/theme_manager.dart';
+import 'package:fends/manager/language_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
 import 'package:fends/controller/controller.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:fends/l10n/app_localizations.dart';
 
 class FendsApp extends StatelessWidget {
   const FendsApp({super.key});
@@ -43,10 +46,20 @@ class FendsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeManager(),
-      child: Consumer<ThemeManager>(
-        builder: (context, themeManager, _) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeManager()),
+        ChangeNotifierProvider(create: (_) => LanguageManager()),
+      ],
+      child: Consumer2<ThemeManager, LanguageManager>(
+        builder: (context, themeManager, languageManager, _) {
+          if (!languageManager.isInitialized) {
+            return MaterialApp(
+              home: Scaffold(body: Center(child: CircularProgressIndicator())),
+              debugShowCheckedModeBanner: false,
+            );
+          }
+
           return DynamicColorBuilder(
             builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
               ColorScheme lightColorScheme;
@@ -70,6 +83,14 @@ class FendsApp extends StatelessWidget {
                 theme: _buildThemeData(lightColorScheme, Brightness.light),
                 darkTheme: _buildThemeData(darkColorScheme, Brightness.dark),
                 themeMode: themeManager.themeMode,
+                locale: languageManager.locale,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('en', ''), Locale('id', '')],
                 home: const AppController(),
                 debugShowCheckedModeBanner: false,
               );
