@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// ignore: unnecessary_import
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
@@ -547,9 +548,6 @@ class OverviewTab extends StatelessWidget {
 
   Widget _buildBudgetRunwayCard(ThemeData theme) {
     final runoutDate = _estimatedRunoutDate;
-    final daysUntilRunout = runoutDate != null
-        ? runoutDate.difference(DateTime.now()).inDays
-        : null;
 
     final willRunOutBeforeFinalDate =
         runoutDate != null && runoutDate.isBefore(finalDate);
