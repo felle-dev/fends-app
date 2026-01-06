@@ -30,6 +30,7 @@ class HomeScreen extends StatefulWidget {
   final Future<void> Function(String) onImportData;
   final bool? biometricEnabled;
   final Function(bool)? onBiometricChanged;
+  final Function(DateTime)? onUpdateFinalDate;
 
   const HomeScreen({
     super.key,
@@ -53,6 +54,7 @@ class HomeScreen extends StatefulWidget {
     required this.onImportData,
     this.biometricEnabled,
     this.onBiometricChanged,
+    this.onUpdateFinalDate,
   });
 
   @override
@@ -62,17 +64,37 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
   late PageController _pageController;
+  bool _isFabExtended = true;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _navIndex);
+    _pageController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  double _lastScrollPosition = 0;
+
+  void _onScroll() {
+    if (_pageController.hasClients) {
+      final currentPosition = _pageController.offset;
+
+      if ((currentPosition - _lastScrollPosition).abs() > 50) {
+        final shouldExtend = currentPosition < _lastScrollPosition;
+        if (_isFabExtended != shouldExtend) {
+          setState(() {
+            _isFabExtended = shouldExtend;
+          });
+        }
+        _lastScrollPosition = currentPosition;
+      }
+    }
   }
 
   String get _currentTitle {
@@ -88,6 +110,117 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return AppStrings.appName;
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkFinalDate();
+  }
+
+  void _checkFinalDate() {
+    final now = DateTime.now();
+    final finalDate = widget.finalDate;
+    final today = DateTime(now.year, now.month, now.day);
+    final deadline = DateTime(finalDate.year, finalDate.month, finalDate.day);
+
+    if (today.isAfter(deadline)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showDateExpiredDialog();
+      });
+    }
+  }
+
+  void _showDateExpiredDialog() {
+    final formattedDate =
+        '${widget.finalDate.day}/${widget.finalDate.month}/${widget.finalDate.year}';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          icon: Icon(
+            Icons.calendar_today_outlined,
+            color: Theme.of(context).colorScheme.error,
+            size: 48,
+          ),
+          title: Text(AppStrings.budgetPeriodEnded),
+          content: Text(
+            AppStrings.format(AppStrings.budgetEndedOn, [formattedDate]),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => SystemNavigator.pop(),
+              child: Text(AppStrings.exitApp),
+            ),
+            FilledButton(
+              onPressed: () => _showUpdateDateDialog(context),
+              child: Text(AppStrings.setNewDate),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpdateDateDialog(BuildContext dialogContext) {
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 30));
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            final formattedSelected =
+                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
+
+            return AlertDialog(
+              title: Text(AppStrings.setNewEndDate),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${AppStrings.selected}: $formattedSelected',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonal(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(
+                          const Duration(days: 3650),
+                        ),
+                      );
+                      if (picked != null) {
+                        setState(() => selectedDate = picked);
+                      }
+                    },
+                    child: Text(AppStrings.chooseDate),
+                  ),
+                ],
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () {
+                    widget.onUpdateFinalDate?.call(selectedDate);
+                    Navigator.pop(context);
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text(AppStrings.confirm),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 
   void _onPageChanged(int index) {
@@ -147,6 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onNavigateToTransactions: () => _onNavTapped(2),
               onDeleteTransaction: widget.onDeleteTransaction,
               onUpdateTransaction: widget.onUpdateTransaction,
+              onUpdateFinalDate: widget.onUpdateFinalDate, // ADD THIS
             ),
             AccountsTab(
               currency: widget.currency,
@@ -180,9 +314,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddTransactionDialog(context),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: Text(AppStrings.addTransaction),
+        isExtended: _isFabExtended,
       ),
       extendBody: true,
       bottomNavigationBar: Container(
@@ -253,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showAddTransactionDialog(BuildContext context) {
     final amountController = TextEditingController();
 
-    String transactionType = 'expense'; // 'expense', 'income', 'transfer'
+    String transactionType = 'expense';
     Account selectedAccount = widget.accounts.first;
     Account? selectedToAccount = widget.accounts.length > 1
         ? widget.accounts[1]
@@ -284,7 +420,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Drag handle
                   Center(
                     child: Container(
                       width: 32,
@@ -305,8 +440,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Type selector
                   SegmentedButton<String>(
                     segments: [
                       ButtonSegment(
@@ -338,8 +471,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-
-                  // Amount input - Primary focus
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -395,8 +526,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Account selector with chips
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -455,8 +584,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-
-                  // To Account selector (only for transfer)
                   if (transactionType == 'transfer') ...[
                     const SizedBox(height: 24),
                     Column(
@@ -525,8 +652,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ],
-
-                  // Category selector with chips (not shown for transfer)
                   if (transactionType != 'transfer') ...[
                     const SizedBox(height: 24),
                     Column(
@@ -601,8 +726,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 32),
-
-                  // Action buttons
                   Row(
                     children: [
                       Expanded(
@@ -631,12 +754,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (transactionType == 'transfer') {
                               if (selectedToAccount == null) return;
 
-                              // Create two transactions for transfer
                               final now = DateTime.now();
                               final transferId = now.millisecondsSinceEpoch
                                   .toString();
 
-                              // Outgoing transaction
                               widget.onAddTransaction(
                                 Transaction(
                                   id: '${transferId}_out',
@@ -654,7 +775,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               );
 
-                              // Incoming transaction
                               widget.onAddTransaction(
                                 Transaction(
                                   id: '${transferId}_in',

@@ -17,6 +17,7 @@ class OverviewTab extends StatelessWidget {
   final VoidCallback onNavigateToTransactions;
   final Function(String) onDeleteTransaction;
   final Function(Transaction) onUpdateTransaction;
+  final Function(DateTime)? onUpdateFinalDate; // NEW: Add this callback
 
   const OverviewTab({
     super.key,
@@ -31,6 +32,7 @@ class OverviewTab extends StatelessWidget {
     required this.onNavigateToTransactions,
     required this.onDeleteTransaction,
     required this.onUpdateTransaction,
+    this.onUpdateFinalDate, // NEW
   });
 
   Category _getCategoryById(String categoryId) {
@@ -94,12 +96,24 @@ class OverviewTab extends StatelessWidget {
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
-  int get _daysLeft =>
-      finalDate.difference(DateTime.now()).inDays.clamp(1, 999999);
+  // NEW: Check if date has passed
+  bool get _isPastFinalDate {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final finalDay = DateTime(finalDate.year, finalDate.month, finalDate.day);
+    return today.isAfter(finalDay);
+  }
+
+  int get _daysLeft {
+    if (_isPastFinalDate) return 0;
+    return finalDate.difference(DateTime.now()).inDays.clamp(1, 999999);
+  }
 
   // FIXED: Use balance at start of day instead of current balance
-  double get _baseDailyAllowance =>
-      _daysLeft > 0 ? _balanceAtStartOfDay / _daysLeft : 0;
+  double get _baseDailyAllowance {
+    if (_isPastFinalDate) return 0; // NEW: No allowance if date passed
+    return _daysLeft > 0 ? _balanceAtStartOfDay / _daysLeft : 0;
+  }
 
   double get _todayIncome {
     final today = DateTime.now();
@@ -201,13 +215,14 @@ class OverviewTab extends StatelessWidget {
   }
 
   double get _rolloverAmount {
+    if (_isPastFinalDate) return 0; // NEW
     final total = _totalSurplusBeforeToday;
     if (total < 0) return 0;
     return total.clamp(0, _baseDailyAllowance);
   }
 
   double get _distributedExcess {
-    if (_daysLeft <= 1) return 0;
+    if (_daysLeft <= 1 || _isPastFinalDate) return 0; // NEW
 
     // Only distribute if we have EXTRA savings beyond rollover cap
     final total = _totalSurplusBeforeToday;
@@ -224,6 +239,61 @@ class OverviewTab extends StatelessWidget {
       _baseDailyAllowance + _rolloverAmount + _distributedExcess;
 
   Widget _buildDailySpendingFocusCard(ThemeData theme, BuildContext context) {
+    // NEW: Handle past final date
+    if (_isPastFinalDate) {
+      return GestureDetector(
+        onTap: () => _showBudgetExplanationDialog(context, theme),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            color: _currentBalance >= 0
+                ? Colors.blue.withOpacity(0.3)
+                : Colors.red.withOpacity(0.3),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Budget Period Ended',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _formatCurrency(_currentBalance),
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _currentBalance >= 0
+                      ? 'Final balance (you stayed within budget!)'
+                      : 'Final balance (overspent)',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final remainingBudget =
         _dailyAllowanceWithRollover + _todayIncome - _todaySpent;
     final isOverBudget = remainingBudget < 0;
@@ -286,46 +356,65 @@ class OverviewTab extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildExplanationRow(
-                theme,
-                AppStrings.baseDailyAllowance,
-                _baseDailyAllowance,
-                Icons.calendar_today,
-                theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 12),
-              _buildExplanationRow(
-                theme,
-                AppStrings.rolloverFromPreviousDays,
-                _rolloverAmount,
-                Icons.trending_up,
-                Colors.green,
-              ),
-              const SizedBox(height: 12),
-              _buildExplanationRow(
-                theme,
-                AppStrings.todaysIncome,
-                _todayIncome,
-                Icons.add_circle,
-                Colors.teal,
-              ),
-              const SizedBox(height: 12),
-              _buildExplanationRow(
-                theme,
-                AppStrings.todaysSpending,
-                -_todaySpent,
-                Icons.remove_circle,
-                Colors.red,
-              ),
-              const Divider(height: 24),
-              _buildExplanationRow(
-                theme,
-                AppStrings.remainingBudget,
-                remainingBudget,
-                Icons.account_balance_wallet,
-                isOverBudget ? Colors.red : Colors.green,
-                isBold: true,
-              ),
+              if (!_isPastFinalDate) ...[
+                _buildExplanationRow(
+                  theme,
+                  AppStrings.baseDailyAllowance,
+                  _baseDailyAllowance,
+                  Icons.calendar_today,
+                  theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 12),
+                _buildExplanationRow(
+                  theme,
+                  AppStrings.rolloverFromPreviousDays,
+                  _rolloverAmount,
+                  Icons.trending_up,
+                  Colors.green,
+                ),
+                const SizedBox(height: 12),
+                _buildExplanationRow(
+                  theme,
+                  AppStrings.todaysIncome,
+                  _todayIncome,
+                  Icons.add_circle,
+                  Colors.teal,
+                ),
+                const SizedBox(height: 12),
+                _buildExplanationRow(
+                  theme,
+                  AppStrings.todaysSpending,
+                  -_todaySpent,
+                  Icons.remove_circle,
+                  Colors.red,
+                ),
+                const Divider(height: 24),
+                _buildExplanationRow(
+                  theme,
+                  AppStrings.remainingBudget,
+                  remainingBudget,
+                  Icons.account_balance_wallet,
+                  isOverBudget ? Colors.red : Colors.green,
+                  isBold: true,
+                ),
+              ] else ...[
+                _buildExplanationRow(
+                  theme,
+                  'Final Balance',
+                  _currentBalance,
+                  Icons.account_balance_wallet,
+                  _currentBalance >= 0 ? Colors.green : Colors.red,
+                  isBold: true,
+                ),
+                const SizedBox(height: 12),
+                _buildExplanationRow(
+                  theme,
+                  'Starting Budget',
+                  totalBudget,
+                  Icons.monetization_on,
+                  theme.colorScheme.primary,
+                ),
+              ],
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -345,7 +434,9 @@ class OverviewTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          AppStrings.howItWorks,
+                          _isPastFinalDate
+                              ? 'Period Summary'
+                              : AppStrings.howItWorks,
                           style: theme.textTheme.labelLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.primary,
@@ -355,7 +446,9 @@ class OverviewTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      AppStrings.budgetExplanationText,
+                      _isPastFinalDate
+                          ? 'Your budget period has ended. ${_currentBalance >= 0 ? "Great job staying within budget!" : "You went over budget, but that\'s okay - use this as learning for next time."}'
+                          : AppStrings.budgetExplanationText,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                         height: 1.5,
@@ -431,6 +524,23 @@ class OverviewTab extends StatelessWidget {
       locale: currency == 'IDR' ? 'id_ID' : 'en_US',
     );
     return formatter.format(amount);
+  }
+
+  // NEW: Show date picker dialog
+  void _showDatePickerDialog(BuildContext context, ThemeData theme) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: finalDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 3650)), // 10 years
+      builder: (context, child) {
+        return Theme(data: theme, child: child!);
+      },
+    );
+
+    if (picked != null && picked != finalDate && onUpdateFinalDate != null) {
+      onUpdateFinalDate!(picked);
+    }
   }
 
   void _showTransactionOptionsDialog(
@@ -586,7 +696,7 @@ class OverviewTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildBalanceGraphCard(theme),
+        _buildBalanceGraphCard(theme, context), // NEW: Pass context
         const SizedBox(height: 16),
         _buildDailySpendingFocusCard(theme, context),
         const SizedBox(height: 24),
@@ -760,7 +870,7 @@ class OverviewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceGraphCard(ThemeData theme) {
+  Widget _buildBalanceGraphCard(ThemeData theme, BuildContext context) {
     final progress = totalBudget > 0
         ? (_currentBalance / totalBudget).clamp(0.0, 1.0)
         : 0.0;
@@ -784,26 +894,49 @@ class OverviewTab extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.3),
-                      width: 1,
+                InkWell(
+                  onTap: onUpdateFinalDate != null
+                      ? () {
+                          _showDatePickerDialog(context, theme);
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    AppStrings.format(AppStrings.daysLeft, [
-                      _daysLeft.toString(),
-                    ]),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
+                    decoration: BoxDecoration(
+                      color: _isPastFinalDate
+                          ? theme.colorScheme.errorContainer.withOpacity(0.5)
+                          : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isPastFinalDate
+                              ? Icons.event_busy_rounded
+                              : Icons.calendar_today_rounded,
+                          size: 16,
+                          color: _isPastFinalDate
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isPastFinalDate
+                              ? 'Ended • ${DateFormat('MMM d').format(finalDate)}'
+                              : '$_daysLeft ${_daysLeft == 1 ? 'day' : 'days'} • ${DateFormat('MMM d').format(finalDate)}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: _isPastFinalDate
+                                ? theme.colorScheme.error
+                                : theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

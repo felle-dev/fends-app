@@ -399,6 +399,23 @@ class AppStrings {
       _localizations?.translate('transferToAccount') ?? 'Transfer to {}';
   static String get transferFromAccount =>
       _localizations?.translate('transferFromAccount') ?? 'Transfer from {}';
+  static String get budgetPeriodEnded =>
+      _localizations?.translate('budgetPeriodEnded') ?? 'Budget Period Ended';
+  static String get budgetEndedOn =>
+      _localizations?.translate('budgetEndedOn') ??
+      'Your budget period ended on {}. Please set a new end date to continue using the app.';
+  static String get exitApp =>
+      _localizations?.translate('exitApp') ?? 'Exit App';
+  static String get setNewDate =>
+      _localizations?.translate('setNewDate') ?? 'Set New Date';
+  static String get setNewEndDate =>
+      _localizations?.translate('setNewEndDate') ?? 'Set New End Date';
+  static String get selected =>
+      _localizations?.translate('selected') ?? 'Selected';
+  static String get chooseDate =>
+      _localizations?.translate('chooseDate') ?? 'Choose Date';
+  static String get confirm =>
+      _localizations?.translate('confirm') ?? 'Confirm';
 
   static String format(String template, List<String> args) {
     String result = template;

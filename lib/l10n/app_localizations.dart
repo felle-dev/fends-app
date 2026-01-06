@@ -223,6 +223,16 @@ class AppLocalizations {
           'Are you sure you want to delete all transactions and accounts? This action cannot be undone.\n\nConsider exporting your data first as a backup.',
       'reset': 'Reset',
       'cancel': 'Cancel',
+
+      'budgetPeriodEnded': 'Budget Period Ended',
+      'budgetEndedOn':
+          'Your budget period ended on {}. Please set a new end date to continue using the app.',
+      'exitApp': 'Exit App',
+      'setNewDate': 'Set New Date',
+      'setNewEndDate': 'Set New End Date',
+      'selected': 'Selected',
+      'chooseDate': 'Choose Date',
+      'confirm': 'Confirm',
     },
     'id': {
       // Onboarding
@@ -435,6 +445,16 @@ class AppLocalizations {
           'Apakah Anda yakin ingin menghapus semua transaksi dan akun? Tindakan ini tidak dapat dibatalkan.\n\nPertimbangkan untuk mengekspor data Anda terlebih dahulu sebagai cadangan.',
       'reset': 'Reset',
       'cancel': 'Batal',
+
+      'budgetPeriodEnded': 'Periode Anggaran Berakhir',
+      'budgetEndedOn':
+          'Periode anggaran Anda berakhir pada {}. Silakan tetapkan tanggal akhir baru untuk melanjutkan menggunakan aplikasi.',
+      'exitApp': 'Keluar Aplikasi',
+      'setNewDate': 'Tetapkan Tanggal Baru',
+      'setNewEndDate': 'Tetapkan Tanggal Akhir Baru',
+      'selected': 'Dipilih',
+      'chooseDate': 'Pilih Tanggal',
+      'confirm': 'Konfirmasi',
     },
   };
 

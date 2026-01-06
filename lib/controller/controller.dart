@@ -363,6 +363,14 @@ class _AppControllerState extends State<AppController> {
     _saveData();
   }
 
+  // NEW METHOD: Update final date
+  void _updateFinalDate(DateTime newDate) {
+    setState(() {
+      _finalDate = newDate;
+    });
+    _saveData();
+  }
+
   void _resetApp() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -519,6 +527,7 @@ class _AppControllerState extends State<AppController> {
       onAddCategory: _addCategory,
       onUpdateCategory: _updateCategory,
       onDeleteCategory: _deleteCategory,
+      onUpdateFinalDate: _updateFinalDate,
       onReset: _resetApp,
       onExportData: _exportData,
       onImportData: _importData,
