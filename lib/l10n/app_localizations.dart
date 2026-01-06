@@ -76,6 +76,20 @@ class AppLocalizations {
       'ofBudget': 'of {} budget',
       'todaysBudgetRemaining': 'Today\'s Budget Remaining',
       'spendingByCategory': 'Spending by Category',
+      'budgetBreakdown': 'Budget Breakdown',
+      'baseDailyAllowance': 'Base Daily Allowance',
+      'rolloverFromPreviousDays': 'Rollover from Previous Days',
+      'todaysIncome': 'Today\'s Income',
+      'todaysSpending': 'Today\'s Spending',
+      'remainingBudget': 'Remaining Budget',
+      'howItWorks': 'How it works',
+      'budgetExplanationText':
+          'Your base daily allowance is calculated from your remaining balance divided by days left.\n\n'
+          'When you spend less than your allowance, the savings roll over to the next day as a bonus.\n\n'
+          'If you overspend, your rollover resets to zero, but your base allowance adjusts automatically based on your new balance.\n\n'
+          'Today\'s income immediately increases your available budget for today.\n\n'
+          'Transfers between accounts don\'t affect your budget.',
+      'gotIt': 'Got it',
 
       // Home & Navigation
       'settings': 'Settings',
@@ -251,6 +265,20 @@ class AppLocalizations {
       'ofBudget': 'dari {} anggaran',
       'todaysBudgetRemaining': 'Sisa Anggaran Hari Ini',
       'spendingByCategory': 'Pengeluaran per Kategori',
+      'budgetBreakdown': 'Rincian Anggaran',
+      'baseDailyAllowance': 'Tunjangan Harian Dasar',
+      'rolloverFromPreviousDays': 'Sisa dari Hari Sebelumnya',
+      'todaysIncome': 'Pemasukan Hari Ini',
+      'todaysSpending': 'Pengeluaran Hari Ini',
+      'remainingBudget': 'Sisa Anggaran',
+      'howItWorks': 'Cara kerjanya',
+      'budgetExplanationText':
+          'Tunjangan harian dasar Anda dihitung dari sisa saldo dibagi jumlah hari tersisa.\n\n'
+          'Ketika Anda menghabiskan lebih sedikit dari tunjangan, sisanya akan ditambahkan ke hari berikutnya sebagai bonus.\n\n'
+          'Jika Anda berlebihan, sisa Anda akan direset ke nol, tetapi tunjangan dasar akan menyesuaikan secara otomatis berdasarkan saldo baru Anda.\n\n'
+          'Pemasukan hari ini langsung meningkatkan anggaran yang tersedia untuk hari ini.\n\n'
+          'Transfer antar akun tidak mempengaruhi anggaran Anda.',
+      'gotIt': 'Mengerti',
 
       // Home & Navigation
       'settings': 'Pengaturan',
@@ -301,8 +329,8 @@ class AppLocalizations {
       'editCategory': 'Edit Kategori',
       'categoryName': 'Nama Kategori',
       'type': 'Tipe',
-      'expense': 'Pengeluaran',
-      'income': 'Pemasukan',
+      'expense': 'Expense',
+      'income': 'Income',
       'icon': 'Ikon',
       'color': 'Warna',
       'preview': 'Pratinjau',

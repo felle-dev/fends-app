@@ -324,6 +324,29 @@ class AppStrings {
       'Today\'s Budget Remaining';
   static String get spendingByCategory =>
       _localizations?.translate('spendingByCategory') ?? 'Spending by Category';
+  static String get budgetBreakdown =>
+      _localizations?.translate('budgetBreakdown') ?? 'Budget Breakdown';
+  static String get baseDailyAllowance =>
+      _localizations?.translate('baseDailyAllowance') ?? 'Base Daily Allowance';
+  static String get rolloverFromPreviousDays =>
+      _localizations?.translate('rolloverFromPreviousDays') ??
+      'Rollover from Previous Days';
+  static String get todaysIncome =>
+      _localizations?.translate('todaysIncome') ?? 'Today\'s Income';
+  static String get todaysSpending =>
+      _localizations?.translate('todaysSpending') ?? 'Today\'s Spending';
+  static String get remainingBudget =>
+      _localizations?.translate('remainingBudget') ?? 'Remaining Budget';
+  static String get howItWorks =>
+      _localizations?.translate('howItWorks') ?? 'How it works';
+  static String get budgetExplanationText =>
+      _localizations?.translate('budgetExplanationText') ??
+      'Your base daily allowance is calculated from your remaining balance divided by days left.\n\n'
+          'When you spend less than your allowance, the savings roll over to the next day as a bonus.\n\n'
+          'If you overspend, your rollover resets to zero, but your base allowance adjusts automatically based on your new balance.\n\n'
+          'Today\'s income immediately increases your available budget for today.\n\n'
+          'Transfers between accounts don\'t affect your budget.';
+  static String get gotIt => _localizations?.translate('gotIt') ?? 'Got it';
 
   // Home & Navigation
   static String get settings =>

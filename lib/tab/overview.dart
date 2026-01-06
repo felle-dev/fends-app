@@ -88,10 +88,15 @@ class OverviewTab extends StatelessWidget {
 
   double get _todayIncome {
     final today = DateTime.now();
+    final transferCategoryId = categories
+        .firstWhere((c) => c.name == 'Transfer')
+        .id;
+
     return transactions
         .where(
           (t) =>
               t.isIncome &&
+              t.categoryId != transferCategoryId &&
               t.date.year == today.year &&
               t.date.month == today.month &&
               t.date.day == today.day,
@@ -99,7 +104,6 @@ class OverviewTab extends StatelessWidget {
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
-  // Calculate rollover from previous days (ONLY POSITIVE SAVINGS)
   double get _rolloverAmount {
     if (transactions.isEmpty) return 0;
     final now = DateTime.now();
@@ -119,10 +123,13 @@ class OverviewTab extends StatelessWidget {
       return 0;
     }
 
+    final transferCategoryId = categories
+        .firstWhere((c) => c.name == 'Transfer')
+        .id;
+
     double totalRollover = 0;
     DateTime checkDate = startDate;
 
-    // Loop through each day from start to yesterday
     while (checkDate.isBefore(today)) {
       final dayTransactions = transactions.where((t) {
         final tDate = DateTime(t.date.year, t.date.month, t.date.day);
@@ -130,20 +137,18 @@ class OverviewTab extends StatelessWidget {
       });
 
       final daySpent = dayTransactions
-          .where((t) => !t.isIncome)
+          .where((t) => !t.isIncome && t.categoryId != transferCategoryId)
           .fold(0.0, (sum, t) => sum + t.amount);
 
       final dayIncome = dayTransactions
-          .where((t) => t.isIncome)
+          .where((t) => t.isIncome && t.categoryId != transferCategoryId)
           .fold(0.0, (sum, t) => sum + t.amount);
 
       final dayAllowance = _baseDailyAllowance;
       final daySavings = dayAllowance + dayIncome - daySpent;
 
-      // Add savings (positive or negative)
       totalRollover += daySavings;
 
-      // If rollover goes negative, reset to 0 (lose all rollover bonus)
       if (totalRollover < 0) {
         totalRollover = 0;
       }
@@ -154,43 +159,198 @@ class OverviewTab extends StatelessWidget {
     return totalRollover;
   }
 
-  // Today's allowance including rollover
   double get _dailyAllowanceWithRollover =>
       _baseDailyAllowance + _rolloverAmount;
 
-  Widget _buildDailySpendingFocusCard(ThemeData theme) {
+  Widget _buildDailySpendingFocusCard(ThemeData theme, BuildContext context) {
     final remainingBudget =
         _dailyAllowanceWithRollover + _todayIncome - _todaySpent;
     final isOverBudget = remainingBudget < 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: isOverBudget
-            ? Colors.red.withOpacity(0.3)
-            : Colors.green.withOpacity(0.3),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppStrings.todaysBudgetRemaining,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+    return GestureDetector(
+      onTap: () => _showBudgetExplanationDialog(context, theme),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: isOverBudget
+              ? Colors.red.withOpacity(0.3)
+              : Colors.green.withOpacity(0.3),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    AppStrings.todaysBudgetRemaining,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _formatCurrency(remainingBudget),
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 12),
+              Text(
+                _formatCurrency(remainingBudget),
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showBudgetExplanationDialog(BuildContext context, ThemeData theme) {
+    final remainingBudget =
+        _dailyAllowanceWithRollover + _todayIncome - _todaySpent;
+    final isOverBudget = remainingBudget < 0;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppStrings.budgetBreakdown),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildExplanationRow(
+                theme,
+                AppStrings.baseDailyAllowance,
+                _baseDailyAllowance,
+                Icons.calendar_today,
+                theme.colorScheme.primary,
+              ),
+              const SizedBox(height: 12),
+              _buildExplanationRow(
+                theme,
+                AppStrings.rolloverFromPreviousDays,
+                _rolloverAmount,
+                Icons.trending_up,
+                Colors.green,
+              ),
+              const SizedBox(height: 12),
+              _buildExplanationRow(
+                theme,
+                AppStrings.todaysIncome,
+                _todayIncome,
+                Icons.add_circle,
+                Colors.teal,
+              ),
+              const SizedBox(height: 12),
+              _buildExplanationRow(
+                theme,
+                AppStrings.todaysSpending,
+                -_todaySpent,
+                Icons.remove_circle,
+                Colors.red,
+              ),
+              const Divider(height: 24),
+              _buildExplanationRow(
+                theme,
+                AppStrings.remainingBudget,
+                remainingBudget,
+                Icons.account_balance_wallet,
+                isOverBudget ? Colors.red : Colors.green,
+                isBold: true,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppStrings.howItWorks,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppStrings.budgetExplanationText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppStrings.gotIt),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExplanationRow(
+    ThemeData theme,
+    String label,
+    double amount,
+    IconData icon,
+    Color color, {
+    bool isBold = false,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+        Text(
+          _formatCurrency(amount),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: amount < 0 ? Colors.red : color,
+          ),
+        ),
+      ],
     );
   }
 
@@ -234,7 +394,7 @@ class OverviewTab extends StatelessWidget {
       children: [
         _buildBalanceGraphCard(theme),
         const SizedBox(height: 16),
-        _buildDailySpendingFocusCard(theme),
+        _buildDailySpendingFocusCard(theme, context),
         const SizedBox(height: 24),
         _buildAccountsOverviewCard(theme),
         const SizedBox(height: 24),
