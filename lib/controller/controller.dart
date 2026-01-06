@@ -359,10 +359,6 @@ class _AppControllerState extends State<AppController> {
   void _deleteCategory(String categoryId) {
     setState(() {
       _categories.removeWhere((c) => c.id == categoryId);
-
-      // Optionally: Reassign transactions to "Other" category
-      // You could add logic here to handle orphaned transactions
-      // For now, transactions will keep their categoryId even if category is deleted
     });
     _saveData();
   }

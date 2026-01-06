@@ -547,7 +547,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               .where(
                                 (c) =>
                                     c.isExpense !=
-                                    (transactionType == 'income'),
+                                        (transactionType == 'income') &&
+                                    c.name != 'Transfer',
                               )
                               .map((category) {
                                 final isSelected =
