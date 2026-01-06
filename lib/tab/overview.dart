@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
-import 'package:fends/helper/graph.dart';
 import 'package:fends/constants/app_strings.dart';
 
 class OverviewTab extends StatelessWidget {
@@ -16,6 +15,8 @@ class OverviewTab extends StatelessWidget {
   final List<Category> categories;
   final VoidCallback onNavigateToAccounts;
   final VoidCallback onNavigateToTransactions;
+  final Function(String) onDeleteTransaction;
+  final Function(Transaction) onUpdateTransaction;
 
   const OverviewTab({
     super.key,
@@ -28,6 +29,8 @@ class OverviewTab extends StatelessWidget {
     required this.categories,
     required this.onNavigateToAccounts,
     required this.onNavigateToTransactions,
+    required this.onDeleteTransaction,
+    required this.onUpdateTransaction,
   });
 
   Category _getCategoryById(String categoryId) {
@@ -42,6 +45,11 @@ class OverviewTab extends StatelessWidget {
         isExpense: true,
       );
     }
+  }
+
+  bool _isTransferTransaction(Transaction transaction) {
+    final category = _getCategoryById(transaction.categoryId);
+    return category.name == 'Transfer';
   }
 
   double get _currentBalance {
@@ -66,16 +74,6 @@ class OverviewTab extends StatelessWidget {
       }
     }
     return balance;
-  }
-
-  double get _totalSpent {
-    final transferCategoryId = categories
-        .firstWhere((c) => c.name == 'Transfer')
-        .id;
-
-    return transactions
-        .where((t) => !t.isIncome && t.categoryId != transferCategoryId)
-        .fold(0.0, (sum, t) => sum + t.amount);
   }
 
   double get _todaySpent {
@@ -435,10 +433,155 @@ class OverviewTab extends StatelessWidget {
     return formatter.format(amount);
   }
 
+  void _showTransactionOptionsDialog(
+    BuildContext context,
+    Transaction transaction,
+  ) {
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(Icons.edit, color: theme.colorScheme.primary),
+                  title: Text(AppStrings.editTransaction),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // You'll need to implement this method similar to the transactions tab
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.delete, color: theme.colorScheme.error),
+                  title: Text(AppStrings.deleteTransaction),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showDeleteConfirmationDialog(context, transaction);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.close),
+                  title: Text(AppStrings.cancel),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(
+    BuildContext context,
+    Transaction transaction,
+  ) {
+    final theme = Theme.of(context);
+    final category = _getCategoryById(transaction.categoryId);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppStrings.deleteTransaction),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(AppStrings.deleteTransactionConfirm),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(category.icon, color: category.color, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('MMM d, y').format(transaction.date),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    _formatCurrency(transaction.amount),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: transaction.isIncome ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppStrings.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              onDeleteTransaction(transaction.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(AppStrings.transactionDeleted),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+            ),
+            child: Text(AppStrings.delete),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     AppStrings.init(context);
     final theme = Theme.of(context);
+    final sortedTransactions = transactions.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final latestTransactions = sortedTransactions.take(5).toList();
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -449,11 +592,13 @@ class OverviewTab extends StatelessWidget {
         const SizedBox(height: 24),
         _buildAccountsOverviewCard(theme),
         const SizedBox(height: 24),
+
+        // Transaction list header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              AppStrings.balanceTrend,
+              AppStrings.transactions,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -465,9 +610,151 @@ class OverviewTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        _buildBalanceTrendCard(theme),
-        const SizedBox(height: 24),
-        _buildCategoryBreakdown(theme),
+
+        // Transactions list (latest 5)
+        if (latestTransactions.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(40),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 64,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppStrings.noTransactionsInPeriod,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...latestTransactions.map((transaction) {
+            final category = _getCategoryById(transaction.categoryId);
+            final account = accounts.firstWhere(
+              (a) => a.id == transaction.accountId,
+            );
+            final isTransfer = _isTransferTransaction(transaction);
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  color: theme.colorScheme.surface,
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () =>
+                      _showTransactionOptionsDialog(context, transaction),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isTransfer
+                                  ? theme.colorScheme.primary
+                                  : category.color,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            isTransfer ? Icons.swap_horiz : category.icon,
+                            color: isTransfer
+                                ? theme.colorScheme.primary
+                                : category.color,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isTransfer
+                                    ? AppStrings.transfer
+                                    : category.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(
+                                    account.icon,
+                                    size: 14,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    account.name,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  if (transaction.note.isNotEmpty) ...[
+                                    const Text(' • '),
+                                    Flexible(
+                                      child: Text(
+                                        transaction.note,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              Text(
+                                DateFormat('MMM d, y').format(transaction.date),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${transaction.isIncome ? '+' : '-'}${_formatCurrency(transaction.amount)}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isTransfer
+                                ? theme.colorScheme.primary
+                                : (transaction.isIncome
+                                      ? Colors.green
+                                      : Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+
         const SizedBox(height: 100),
       ],
     );
@@ -637,143 +924,6 @@ class OverviewTab extends StatelessWidget {
             ),
           );
         }),
-      ],
-    );
-  }
-
-  Widget _buildBalanceTrendCard(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surface,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: SizedBox(
-          height: 200,
-          child: BudgetGraph(
-            totalBudget: totalBudget,
-            transactions: transactions,
-            finalDate: finalDate,
-            colorScheme: theme.colorScheme,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryBreakdown(ThemeData theme) {
-    final expensesByCategory = <String, double>{};
-
-    for (var t in transactions.where((t) => !t.isIncome)) {
-      expensesByCategory[t.categoryId] =
-          (expensesByCategory[t.categoryId] ?? 0) + t.amount;
-    }
-
-    if (expensesByCategory.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final sortedEntries = expensesByCategory.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppStrings.spendingByCategory,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant,
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            color: theme.colorScheme.surface,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: sortedEntries.take(5).map((entry) {
-                final category = _getCategoryById(entry.key);
-                final percentage = _totalSpent > 0
-                    ? (entry.value / _totalSpent) * 100
-                    : 0.0;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: category.color,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              category.icon,
-                              color: category.color,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  category.name,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '${percentage.toStringAsFixed(1)}%',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            _formatCurrency(entry.value),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: percentage / 100,
-                          minHeight: 6,
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          color: category.color,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
       ],
     );
   }

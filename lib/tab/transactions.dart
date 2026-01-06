@@ -156,13 +156,16 @@ class _TransactionsTabState extends State<TransactionsTab> {
           const SizedBox(height: 16),
         ],
 
-        Text(
-          AppStrings.topCategories,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
+        if (sortedTransactions.isNotEmpty)
+        ...[
+          Text(
+            AppStrings.topCategories,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
+        ],
 
         // Category breakdown
         if (_getCategoryBreakdown().isNotEmpty) ...[
