@@ -8,6 +8,48 @@ class AppStrings {
     _localizations = AppLocalizations.of(context);
   }
 
+  // Onboarding
+  static String get welcomeToFends =>
+      _localizations?.translate('welcomeToFends') ?? 'Welcome to Fends';
+  static String get welcomeDescription =>
+      _localizations?.translate('welcomeDescription') ??
+      'Manage your budget wisely with accounts and categories';
+  static String get selectCurrency =>
+      _localizations?.translate('selectCurrency') ?? 'Select Currency';
+  static String get choosePreferredCurrency =>
+      _localizations?.translate('choosePreferredCurrency') ??
+      'Choose your preferred currency';
+  static String get addAccounts =>
+      _localizations?.translate('addAccounts') ?? 'Add Accounts';
+  static String get totalBudgetDescription =>
+      _localizations?.translate('totalBudgetDescription') ??
+      'Your total budget will be the sum of all account balances';
+  static String get addAtLeastOneAccount =>
+      _localizations?.translate('addAtLeastOneAccount') ??
+      'Add at least one account to continue';
+  static String get budgetPeriod =>
+      _localizations?.translate('budgetPeriod') ?? 'Budget Period';
+  static String get whenShouldBudgetEnd =>
+      _localizations?.translate('whenShouldBudgetEnd') ??
+      'When should this budget end?';
+  static String get endDate =>
+      _localizations?.translate('endDate') ?? 'End Date';
+  static String get selectDate =>
+      _localizations?.translate('selectDate') ?? 'Select Date';
+  static String get daysFromNow =>
+      _localizations?.translate('daysFromNow') ?? '{} days from now';
+  static String get back => _localizations?.translate('back') ?? 'Back';
+  static String get next => _localizations?.translate('next') ?? 'Next';
+  static String get getStarted =>
+      _localizations?.translate('getStarted') ?? 'Get Started';
+  static String get accountNameHint =>
+      _localizations?.translate('accountNameHint') ?? 'e.g., My Wallet';
+  static String get deleteAccountNameConfirm =>
+      _localizations?.translate('deleteAccountNameConfirm') ??
+      'Are you sure you want to delete "{}"?';
+  static String get editAccount =>
+      _localizations?.translate('editAccount') ?? 'Edit Account';
+
   // Security
   static String get security =>
       _localizations?.translate('security') ?? 'Security';

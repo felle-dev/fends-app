@@ -14,6 +14,29 @@ class AppLocalizations {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
+      // Onboarding
+      'welcomeToFends': 'Welcome to Fends',
+      'welcomeDescription':
+          'Manage your budget wisely with accounts and categories',
+      'selectCurrency': 'Select Currency',
+      'choosePreferredCurrency': 'Choose your preferred currency',
+      'addAccounts': 'Add Accounts',
+      'totalBudgetDescription':
+          'Your total budget will be the sum of all account balances',
+      'noAccountsYet': 'No accounts yet',
+      'addAtLeastOneAccount': 'Add at least one account to continue',
+      'budgetPeriod': 'Budget Period',
+      'whenShouldBudgetEnd': 'When should this budget end?',
+      'endDate': 'End Date',
+      'selectDate': 'Select Date',
+      'daysFromNow': '{} days from now',
+      'back': 'Back',
+      'next': 'Next',
+      'getStarted': 'Get Started',
+      'accountNameHint': 'e.g., My Wallet',
+      'deleteAccountNameConfirm': 'Are you sure you want to delete "{}"?',
+      'editAccount': 'Edit Account',
+
       // Transactions
       'transactions': 'Transactions',
       'totalTransactions': '{} total',
@@ -46,7 +69,6 @@ class AppLocalizations {
 
       // Accounts
       'accounts': 'Accounts',
-      'noAccountsYet': 'No accounts yet',
       'addFirstAccount': 'Add your first account to start tracking',
       'totalNetWorth': 'Total Net Worth',
       'acrossAccounts': 'across {} account{}',
@@ -203,6 +225,30 @@ class AppLocalizations {
       'cancel': 'Cancel',
     },
     'id': {
+      // Onboarding
+      'welcomeToFends': 'Selamat Datang di Fends',
+      'welcomeDescription':
+          'Kelola anggaran Anda dengan bijak menggunakan akun dan kategori',
+      'selectCurrency': 'Pilih Mata Uang',
+      'choosePreferredCurrency': 'Pilih mata uang pilihan Anda',
+      'addAccounts': 'Tambah Akun',
+      'totalBudgetDescription':
+          'Total anggaran Anda adalah jumlah dari semua saldo akun',
+      'noAccountsYet': 'Belum ada akun',
+      'addAtLeastOneAccount':
+          'Tambahkan setidaknya satu akun untuk melanjutkan',
+      'budgetPeriod': 'Periode Anggaran',
+      'whenShouldBudgetEnd': 'Kapan anggaran ini berakhir?',
+      'endDate': 'Tanggal Akhir',
+      'selectDate': 'Pilih Tanggal',
+      'daysFromNow': '{} hari dari sekarang',
+      'back': 'Kembali',
+      'next': 'Lanjut',
+      'getStarted': 'Mulai',
+      'accountNameHint': 'misal, Dompet Saya',
+      'deleteAccountNameConfirm': 'Apakah Anda yakin ingin menghapus "{}"?',
+      'editAccount': 'Edit Akun',
+
       // Transactions
       'transactions': 'Transaksi',
       'totalTransactions': '{} total',
@@ -235,7 +281,6 @@ class AppLocalizations {
 
       // Accounts
       'accounts': 'Akun',
-      'noAccountsYet': 'Belum ada akun',
       'addFirstAccount': 'Tambahkan akun pertama Anda untuk mulai melacak',
       'totalNetWorth': 'Total Kekayaan Bersih',
       'acrossAccounts': 'dari {} akun',

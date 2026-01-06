@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:fends/model.dart';
+import 'package:fends/constants/app_strings.dart';
 
 class OnboardingFlow extends StatefulWidget {
   final Function(String, String, double, DateTime, List<Account>) onComplete;
@@ -92,6 +93,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -157,7 +159,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text('Back'),
+                        child: Text(AppStrings.back),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -172,7 +174,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text(_currentPage == 3 ? 'Get Started' : 'Next'),
+                      child: Text(
+                        _currentPage == 3
+                            ? AppStrings.getStarted
+                            : AppStrings.next,
+                      ),
                     ),
                   ),
                 ],
@@ -219,7 +225,7 @@ class WelcomePage extends StatelessWidget {
           ),
           const SizedBox(height: 40),
           Text(
-            'Welcome to Fends',
+            AppStrings.welcomeToFends,
             style: theme.textTheme.headlineLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -227,7 +233,7 @@ class WelcomePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Manage your budget wisely with accounts and categories',
+            AppStrings.welcomeDescription,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -269,14 +275,14 @@ class CurrencyPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Select Currency',
+            AppStrings.selectCurrency,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Choose your preferred currency',
+            AppStrings.choosePreferredCurrency,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -450,14 +456,16 @@ class _AccountsPageState extends State<AccountsPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: const Text('Delete Account'),
+        title: Text(AppStrings.deleteAccount),
         content: Text(
-          'Are you sure you want to delete "${_localAccounts[index].name}"?',
+          AppStrings.format(AppStrings.deleteAccountNameConfirm, [
+            _localAccounts[index].name,
+          ]),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -470,7 +478,7 @@ class _AccountsPageState extends State<AccountsPage> {
             style: FilledButton.styleFrom(
               backgroundColor: theme.colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(AppStrings.delete),
           ),
         ],
       ),
@@ -487,14 +495,14 @@ class _AccountsPageState extends State<AccountsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Add Accounts',
+            AppStrings.addAccounts,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Your total budget will be the sum of all account balances',
+            AppStrings.totalBudgetDescription,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -513,14 +521,14 @@ class _AccountsPageState extends State<AccountsPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No accounts yet',
+                          AppStrings.noAccountsYet,
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Add at least one account to continue',
+                          AppStrings.addAtLeastOneAccount,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -627,7 +635,7 @@ class _AccountsPageState extends State<AccountsPage> {
             child: FilledButton.icon(
               onPressed: _showAddAccountDialog,
               icon: const Icon(Icons.add),
-              label: const Text('Add Account'),
+              label: Text(AppStrings.addAccount),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -737,7 +745,7 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
                 ),
               ),
               Text(
-                isEditing ? 'Edit Account' : 'Add Account',
+                isEditing ? AppStrings.editAccount : AppStrings.addAccount,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -748,8 +756,8 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Account Name',
-                  hintText: 'e.g., My Wallet',
+                  labelText: AppStrings.accountName,
+                  hintText: AppStrings.accountNameHint,
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
@@ -766,7 +774,7 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
                 controller: _balanceController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Initial Balance',
+                  labelText: AppStrings.initialBalance,
                   hintText: '0',
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerHighest,
@@ -789,7 +797,7 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
 
               // Account Type
               Text(
-                'Account Type',
+                AppStrings.accountType,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -821,7 +829,7 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
 
               // Color
               Text(
-                'Color',
+                AppStrings.color,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -870,7 +878,7 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Cancel'),
+                      child: Text(AppStrings.cancel),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -906,7 +914,9 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(isEditing ? 'Update' : 'Add Account'),
+                      child: Text(
+                        isEditing ? AppStrings.update : AppStrings.addAccount,
+                      ),
                     ),
                   ),
                 ],
@@ -932,21 +942,23 @@ class DatePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStrings.init(context);
     final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Budget Period',
+            AppStrings.budgetPeriod,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'When should this budget end?',
+            AppStrings.whenShouldBudgetEnd,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -1002,7 +1014,7 @@ class DatePage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'End Date',
+                                    AppStrings.endDate,
                                     style: theme.textTheme.labelMedium
                                         ?.copyWith(
                                           color: theme
@@ -1013,7 +1025,7 @@ class DatePage extends StatelessWidget {
                                   const SizedBox(height: 4),
                                   Text(
                                     selectedDate == null
-                                        ? 'Select Date'
+                                        ? AppStrings.selectDate
                                         : DateFormat(
                                             'EEEE, MMM d, y',
                                           ).format(selectedDate!),
@@ -1054,7 +1066,12 @@ class DatePage extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '${selectedDate!.difference(DateTime.now()).inDays} days from now',
+                            AppStrings.format(AppStrings.daysFromNow, [
+                              selectedDate!
+                                  .difference(DateTime.now())
+                                  .inDays
+                                  .toString(),
+                            ]),
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: theme.colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.w600,
