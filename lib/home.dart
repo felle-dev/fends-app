@@ -109,52 +109,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(title: Text(_currentTitle), centerTitle: false),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        children: [
-          OverviewTab(
-            currency: widget.currency,
-            currencySymbol: widget.currencySymbol,
-            totalBudget: widget.totalBudget,
-            finalDate: widget.finalDate,
-            transactions: widget.transactions,
-            accounts: widget.accounts,
-            categories: widget.categories,
-            onNavigateToAccounts: () => _onNavTapped(1),
-            onNavigateToTransactions: () => _onNavTapped(2),
-          ),
-          AccountsTab(
-            currency: widget.currency,
-            currencySymbol: widget.currencySymbol,
-            transactions: widget.transactions,
-            accounts: widget.accounts,
-            onAddAccount: widget.onAddAccount,
-            onDeleteAccount: widget.onDeleteAccount,
-          ),
-          TransactionsTab(
-            currency: widget.currency,
-            currencySymbol: widget.currencySymbol,
-            transactions: widget.transactions,
-            accounts: widget.accounts,
-            categories: widget.categories,
-            onDeleteTransaction: widget.onDeleteTransaction,
-            onUpdateTransaction: widget.onUpdateTransaction,
-          ),
-          SettingsTab(
-            onExportData: widget.onExportData,
-            onImportData: (jsonData) async =>
-                await widget.onImportData(jsonData),
-            onReset: widget.onReset,
-            biometricEnabled: widget.biometricEnabled,
-            onBiometricChanged: widget.onBiometricChanged,
-            categories: widget.categories,
-            onAddCategory: widget.onAddCategory,
-            onUpdateCategory: widget.onUpdateCategory,
-            onDeleteCategory: widget.onDeleteCategory,
-          ),
-        ],
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 120.0,
+              floating: false,
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  _currentTitle,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+                expandedTitleScale: 1.5,
+              ),
+              backgroundColor: theme.colorScheme.surface,
+              foregroundColor: theme.colorScheme.onSurface,
+            ),
+          ];
+        },
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
+          children: [
+            OverviewTab(
+              currency: widget.currency,
+              currencySymbol: widget.currencySymbol,
+              totalBudget: widget.totalBudget,
+              finalDate: widget.finalDate,
+              transactions: widget.transactions,
+              accounts: widget.accounts,
+              categories: widget.categories,
+              onNavigateToAccounts: () => _onNavTapped(1),
+              onNavigateToTransactions: () => _onNavTapped(2),
+            ),
+            AccountsTab(
+              currency: widget.currency,
+              currencySymbol: widget.currencySymbol,
+              transactions: widget.transactions,
+              accounts: widget.accounts,
+              onAddAccount: widget.onAddAccount,
+              onDeleteAccount: widget.onDeleteAccount,
+            ),
+            TransactionsTab(
+              currency: widget.currency,
+              currencySymbol: widget.currencySymbol,
+              transactions: widget.transactions,
+              accounts: widget.accounts,
+              categories: widget.categories,
+              onDeleteTransaction: widget.onDeleteTransaction,
+              onUpdateTransaction: widget.onUpdateTransaction,
+            ),
+            SettingsTab(
+              onExportData: widget.onExportData,
+              onImportData: (jsonData) async =>
+                  await widget.onImportData(jsonData),
+              onReset: widget.onReset,
+              biometricEnabled: widget.biometricEnabled,
+              onBiometricChanged: widget.onBiometricChanged,
+              categories: widget.categories,
+              onAddCategory: widget.onAddCategory,
+              onUpdateCategory: widget.onUpdateCategory,
+              onDeleteCategory: widget.onDeleteCategory,
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTransactionDialog(context),
@@ -195,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 indicatorColor: theme.colorScheme.primaryContainer.withOpacity(
                   0.8,
                 ),
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                 destinations: [
                   NavigationDestination(
                     icon: const Icon(Icons.home_outlined),

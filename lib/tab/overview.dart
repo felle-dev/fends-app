@@ -52,6 +52,22 @@ class OverviewTab extends StatelessWidget {
     return balance;
   }
 
+  // Calculate balance at the start of today (before today's transactions)
+  double get _balanceAtStartOfDay {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    double balance = totalBudget;
+    for (var t in transactions) {
+      final tDate = DateTime(t.date.year, t.date.month, t.date.day);
+      // Only include transactions BEFORE today
+      if (tDate.isBefore(today)) {
+        balance += t.isIncome ? t.amount : -t.amount;
+      }
+    }
+    return balance;
+  }
+
   double get _totalSpent {
     final transferCategoryId = categories
         .firstWhere((c) => c.name == 'Transfer')
@@ -83,8 +99,9 @@ class OverviewTab extends StatelessWidget {
   int get _daysLeft =>
       finalDate.difference(DateTime.now()).inDays.clamp(1, 999999);
 
+  // FIXED: Use balance at start of day instead of current balance
   double get _baseDailyAllowance =>
-      _daysLeft > 0 ? _currentBalance / _daysLeft : 0;
+      _daysLeft > 0 ? _balanceAtStartOfDay / _daysLeft : 0;
 
   double get _todayIncome {
     final today = DateTime.now();
@@ -104,14 +121,23 @@ class OverviewTab extends StatelessWidget {
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
-  double get _rolloverAmount {
+  // NEW: Calculate accumulated surplus from all previous days
+  double get _totalSurplusBeforeToday {
     if (transactions.isEmpty) return 0;
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    final earliestTransaction = transactions.isEmpty
-        ? today
-        : transactions.reduce((a, b) => a.date.isBefore(b.date) ? a : b).date;
+    final transactionsBeforeToday = transactions.where((t) {
+      final tDate = DateTime(t.date.year, t.date.month, t.date.day);
+      return tDate.isBefore(today);
+    });
+
+    if (transactionsBeforeToday.isEmpty) return 0;
+
+    final earliestTransaction = transactionsBeforeToday
+        .reduce((a, b) => a.date.isBefore(b.date) ? a : b)
+        .date;
 
     final startDate = DateTime(
       earliestTransaction.year,
@@ -119,15 +145,11 @@ class OverviewTab extends StatelessWidget {
       earliestTransaction.day,
     );
 
-    if (startDate.isAtSameMomentAs(today) || startDate.isAfter(today)) {
-      return 0;
-    }
-
     final transferCategoryId = categories
         .firstWhere((c) => c.name == 'Transfer')
         .id;
 
-    double totalRollover = 0;
+    double totalSurplus = 0;
     DateTime checkDate = startDate;
 
     while (checkDate.isBefore(today)) {
@@ -144,23 +166,64 @@ class OverviewTab extends StatelessWidget {
           .where((t) => t.isIncome && t.categoryId != transferCategoryId)
           .fold(0.0, (sum, t) => sum + t.amount);
 
-      final dayAllowance = _baseDailyAllowance;
+      // Calculate what the daily allowance was on that specific day
+      final daysLeftAtThatTime = finalDate
+          .difference(checkDate)
+          .inDays
+          .clamp(1, 999999);
+
+      // Calculate balance at the start of that day
+      final transactionsBeforeThatDay = transactions.where((t) {
+        final tDate = DateTime(t.date.year, t.date.month, t.date.day);
+        return tDate.isBefore(checkDate);
+      });
+
+      double balanceAtStartOfThatDay = totalBudget;
+      for (var t in transactionsBeforeThatDay) {
+        balanceAtStartOfThatDay += t.isIncome ? t.amount : -t.amount;
+      }
+
+      final dayAllowance = daysLeftAtThatTime > 0
+          ? balanceAtStartOfThatDay / daysLeftAtThatTime
+          : 0;
+
       final daySavings = dayAllowance + dayIncome - daySpent;
 
-      totalRollover += daySavings;
+      totalSurplus += daySavings;
 
-      if (totalRollover < 0) {
-        totalRollover = 0;
+      // Reset surplus to 0 if it goes negative (can't carry over debt)
+      if (totalSurplus < 0) {
+        totalSurplus = 0;
       }
 
       checkDate = checkDate.add(const Duration(days: 1));
     }
 
-    return totalRollover;
+    return totalSurplus;
+  }
+
+  double get _rolloverAmount {
+    final total = _totalSurplusBeforeToday;
+    if (total < 0) return 0;
+    return total.clamp(0, _baseDailyAllowance);
+  }
+
+  double get _distributedExcess {
+    if (_daysLeft <= 1) return 0;
+
+    // Only distribute if we have EXTRA savings beyond rollover cap
+    final total = _totalSurplusBeforeToday;
+    if (total <= 0) return 0; // No surplus at all
+
+    // Calculate excess only if surplus exceeds the rollover cap
+    final excess = total - _baseDailyAllowance;
+
+    // Only distribute positive excess (true savings beyond cap)
+    return excess > 0 ? excess / (_daysLeft - 1) : 0;
   }
 
   double get _dailyAllowanceWithRollover =>
-      _baseDailyAllowance + _rolloverAmount;
+      _baseDailyAllowance + _rolloverAmount + _distributedExcess;
 
   Widget _buildDailySpendingFocusCard(ThemeData theme, BuildContext context) {
     final remainingBudget =
@@ -353,18 +416,6 @@ class OverviewTab extends StatelessWidget {
       ],
     );
   }
-
-  // double get _averageDailySpending {
-  //   if (transactions.isEmpty) return 0;
-  //   final earliestTransaction = transactions.reduce(
-  //     (a, b) => a.date.isBefore(b.date) ? a : b,
-  //   );
-  //   final daysSinceFirstTransaction =
-  //       DateTime.now().difference(earliestTransaction.date).inDays + 1;
-  //   return daysSinceFirstTransaction > 0
-  //       ? _totalSpent / daysSinceFirstTransaction
-  //       : 0;
-  // }
 
   double _getAccountBalance(String accountId) {
     final account = accounts.firstWhere((a) => a.id == accountId);
