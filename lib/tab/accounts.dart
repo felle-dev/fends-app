@@ -1,3 +1,4 @@
+import 'package:fends/utils/input_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -100,7 +101,6 @@ class AccountsTab extends StatelessWidget {
             ),
           )
         else ...[
-          // Total Overview Card
           _buildTotalOverviewCard(theme),
 
           ...accounts.map((account) {
@@ -201,7 +201,6 @@ class AccountsTab extends StatelessWidget {
             );
           }),
 
-          // Add Account Button
           OutlinedButton.icon(
             onPressed: () => _showAddAccountDialog(context),
             icon: const Icon(Icons.add, size: 20),
@@ -291,7 +290,6 @@ class AccountsTab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Drag handle
                   Center(
                     child: Container(
                       width: 32,
@@ -306,7 +304,6 @@ class AccountsTab extends StatelessWidget {
                     ),
                   ),
 
-                  // Account Header
                   Row(
                     children: [
                       Container(
@@ -350,7 +347,6 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Current Balance
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -387,7 +383,6 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Statistics Grid
                   Row(
                     children: [
                       Expanded(
@@ -469,7 +464,6 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Income and Expenses
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -588,7 +582,6 @@ class AccountsTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Action Button
                   if (accounts.length > 1)
                     SizedBox(
                       width: double.infinity,
@@ -939,7 +932,6 @@ class AccountsTab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Drag handle
                   Center(
                     child: Container(
                       width: 32,
@@ -989,7 +981,7 @@ class AccountsTab extends StatelessWidget {
                     ),
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      _ThousandsSeparatorInputFormatter(),
+                      ThousandsSeparatorInputFormatter(),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -1121,35 +1113,5 @@ class AccountsTab extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    final numericValue = newValue.text.replaceAll(',', '');
-
-    if (numericValue.isEmpty) {
-      return newValue;
-    }
-
-    final formattedValue = _formatWithCommas(numericValue);
-
-    return TextEditingValue(
-      text: formattedValue,
-      selection: TextSelection.collapsed(offset: formattedValue.length),
-    );
-  }
-
-  String _formatWithCommas(String value) {
-    final regex = RegExp(r'\B(?=(\d{3})+(?!\d))');
-    return value.replaceAllMapped(regex, (match) => ',');
   }
 }

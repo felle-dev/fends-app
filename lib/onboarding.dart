@@ -1,3 +1,4 @@
+import 'package:fends/utils/input_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -191,9 +192,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 }
 
-// ============================================================================
-// WELCOME PAGE
-// ============================================================================
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
@@ -732,7 +730,6 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Drag handle
               Center(
                 child: Container(
                   width: 32,
@@ -752,7 +749,6 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
               ),
               const SizedBox(height: 24),
 
-              // Account Name
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -769,7 +765,6 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
               ),
               const SizedBox(height: 16),
 
-              // Initial Balance
               TextField(
                 controller: _balanceController,
                 keyboardType: TextInputType.number,
@@ -790,12 +785,11 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
                 ),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  _ThousandsSeparatorInputFormatter(),
+                  ThousandsSeparatorInputFormatter(),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // Account Type
               Text(
                 AppStrings.accountType,
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -827,7 +821,6 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
               ),
               const SizedBox(height: 24),
 
-              // Color
               Text(
                 AppStrings.color,
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -866,7 +859,6 @@ class _AddEditAccountDialogState extends State<_AddEditAccountDialog> {
                 }).toList(),
               ),
               const SizedBox(height: 24),
-              // Action buttons
               Row(
                 children: [
                   Expanded(
@@ -1088,34 +1080,5 @@ class DatePage extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-    final numericValue = newValue.text.replaceAll(',', '');
-
-    if (numericValue.isEmpty) {
-      return newValue;
-    }
-
-    final formattedValue = _formatWithCommas(numericValue);
-
-    return TextEditingValue(
-      text: formattedValue,
-      selection: TextSelection.collapsed(offset: formattedValue.length),
-    );
-  }
-
-  String _formatWithCommas(String value) {
-    final regex = RegExp(r'\B(?=(\d{3})+(?!\d))');
-    return value.replaceAllMapped(regex, (match) => ',');
   }
 }

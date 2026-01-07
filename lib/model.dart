@@ -27,7 +27,7 @@ class Account {
     'initialBalance': initialBalance,
     'iconName': IconHelper.getIconName(
       icon,
-    ), // CHANGED: Store icon name instead
+    ),
     'color': color.value,
   };
 
@@ -38,7 +38,7 @@ class Account {
     initialBalance: json['initialBalance'],
     icon: IconHelper.getIcon(
       json['iconName'] ?? 'account_balance_wallet',
-    ), // CHANGED
+    ),
     color: Color(json['color']),
   );
 }
@@ -67,7 +67,7 @@ class Category {
     'name': name,
     'iconName': IconHelper.getIconName(
       icon,
-    ), // CHANGED: Store icon name instead
+    ),
     'color': color.value,
     'isExpense': isExpense,
   };
@@ -75,7 +75,7 @@ class Category {
   factory Category.fromJson(Map<String, dynamic> json) => Category(
     id: json['id'],
     name: json['name'],
-    icon: IconHelper.getIcon(json['iconName'] ?? 'more_horiz'), // CHANGED
+    icon: IconHelper.getIcon(json['iconName'] ?? 'more_horiz'),
     color: Color(json['color']),
     isExpense: json['isExpense'],
   );

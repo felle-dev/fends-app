@@ -1,3 +1,4 @@
+import 'package:fends/utils/input_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -961,7 +962,7 @@ class _TransactionsTabState extends State<TransactionsTab> {
                           ),
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
-                            _ThousandsSeparatorInputFormatter(),
+                            ThousandsSeparatorInputFormatter(),
                           ],
                         ),
                       ],
@@ -1307,35 +1308,5 @@ class _TransactionsTabState extends State<TransactionsTab> {
         ),
       ),
     );
-  }
-}
-
-class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    final numericValue = newValue.text.replaceAll(',', '');
-
-    if (numericValue.isEmpty) {
-      return newValue;
-    }
-
-    final formattedValue = _formatWithCommas(numericValue);
-
-    return TextEditingValue(
-      text: formattedValue,
-      selection: TextSelection.collapsed(offset: formattedValue.length),
-    );
-  }
-
-  String _formatWithCommas(String value) {
-    final regex = RegExp(r'\B(?=(\d{3})+(?!\d))');
-    return value.replaceAllMapped(regex, (match) => ',');
   }
 }
