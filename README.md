@@ -2,11 +2,11 @@
 [![Flutter][flutter-badge]](https://flutter.dev)
 [![License][license-badge]](LICENSE)
 
-[**Fends**](https://github.com/yourusername/fends) is a simple and intuitive budget management app that helps you track your spending and take control of your finances.
+[**Fends**](https://github.com/felle-dev/fends) is a simple and intuitive budget management app that helps you track your spending and take control of your finances.
 
 Keep track of every transaction, understand your spending patterns, and make informed financial decisions. Whether you're managing daily expenses or planning for the future, Fends keeps your finances organized and accessible.
 
-[<img alt='Get it on GitHub' height="60" src='./screenshot/badges/get-it-on-github.png' />](https://github.com/felle-dev/fends-app/releases)
+[![Get it on GitHub](https://img.shields.io/badge/Get%20it%20on-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/felle-dev/fends-app/releases)
 
 ## Features
 
