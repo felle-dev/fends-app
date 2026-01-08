@@ -5,7 +5,6 @@ import 'package:fends/tab/settings.dart';
 import 'package:fends/tab/transactions.dart';
 import 'package:fends/utils/input_formatters.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:fends/model.dart';
 import 'package:fends/constants/app_strings.dart';
@@ -66,12 +65,13 @@ class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
   late PageController _pageController;
   bool _isFabExtended = true;
+  double _lastScrollOffset = 0;
+  static const double _scrollThreshold = 10.0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _navIndex);
-    _pageController.addListener(_onScroll);
   }
 
   @override
@@ -80,21 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  double _lastScrollPosition = 0;
-
-  void _onScroll() {
-    if (_pageController.hasClients) {
-      final currentPosition = _pageController.offset;
-
-      if ((currentPosition - _lastScrollPosition).abs() > 50) {
-        final shouldExtend = currentPosition < _lastScrollPosition;
-        if (_isFabExtended != shouldExtend) {
-          setState(() {
-            _isFabExtended = shouldExtend;
-          });
-        }
-        _lastScrollPosition = currentPosition;
-      }
+  // Callback to handle vertical scroll from child tabs
+  void _onVerticalScroll(bool shouldExtend) {
+    if (_isFabExtended != shouldExtend) {
+      setState(() {
+        _isFabExtended = shouldExtend;
+      });
     }
   }
 
@@ -269,48 +260,108 @@ class _HomeScreenState extends State<HomeScreen> {
           controller: _pageController,
           onPageChanged: _onPageChanged,
           children: [
-            OverviewTab(
-              currency: widget.currency,
-              currencySymbol: widget.currencySymbol,
-              totalBudget: widget.totalBudget,
-              finalDate: widget.finalDate,
-              transactions: widget.transactions,
-              accounts: widget.accounts,
-              categories: widget.categories,
-              onNavigateToAccounts: () => _onNavTapped(1),
-              onNavigateToTransactions: () => _onNavTapped(2),
-              onDeleteTransaction: widget.onDeleteTransaction,
-              onUpdateTransaction: widget.onUpdateTransaction,
-              onUpdateFinalDate: widget.onUpdateFinalDate,
+            NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification) {
+                  final currentOffset = notification.metrics.pixels;
+                  final delta = currentOffset - _lastScrollOffset;
+
+                  if (delta.abs() > _scrollThreshold) {
+                    final shouldExtend = delta < 0;
+                    _onVerticalScroll(shouldExtend);
+                    _lastScrollOffset = currentOffset;
+                  }
+                }
+                return false;
+              },
+              child: OverviewTab(
+                currency: widget.currency,
+                currencySymbol: widget.currencySymbol,
+                totalBudget: widget.totalBudget,
+                finalDate: widget.finalDate,
+                transactions: widget.transactions,
+                accounts: widget.accounts,
+                categories: widget.categories,
+                onNavigateToAccounts: () => _onNavTapped(1),
+                onNavigateToTransactions: () => _onNavTapped(2),
+                onDeleteTransaction: widget.onDeleteTransaction,
+                onUpdateTransaction: widget.onUpdateTransaction,
+                onUpdateFinalDate: widget.onUpdateFinalDate,
+              ),
             ),
-            AccountsTab(
-              currency: widget.currency,
-              currencySymbol: widget.currencySymbol,
-              transactions: widget.transactions,
-              accounts: widget.accounts,
-              onAddAccount: widget.onAddAccount,
-              onDeleteAccount: widget.onDeleteAccount,
+            NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification) {
+                  final currentOffset = notification.metrics.pixels;
+                  final delta = currentOffset - _lastScrollOffset;
+
+                  if (delta.abs() > _scrollThreshold) {
+                    final shouldExtend = delta < 0;
+                    _onVerticalScroll(shouldExtend);
+                    _lastScrollOffset = currentOffset;
+                  }
+                }
+                return false;
+              },
+              child: AccountsTab(
+                currency: widget.currency,
+                currencySymbol: widget.currencySymbol,
+                transactions: widget.transactions,
+                accounts: widget.accounts,
+                onAddAccount: widget.onAddAccount,
+                onDeleteAccount: widget.onDeleteAccount,
+              ),
             ),
-            TransactionsTab(
-              currency: widget.currency,
-              currencySymbol: widget.currencySymbol,
-              transactions: widget.transactions,
-              accounts: widget.accounts,
-              categories: widget.categories,
-              onDeleteTransaction: widget.onDeleteTransaction,
-              onUpdateTransaction: widget.onUpdateTransaction,
+            NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification) {
+                  final currentOffset = notification.metrics.pixels;
+                  final delta = currentOffset - _lastScrollOffset;
+
+                  if (delta.abs() > _scrollThreshold) {
+                    final shouldExtend = delta < 0;
+                    _onVerticalScroll(shouldExtend);
+                    _lastScrollOffset = currentOffset;
+                  }
+                }
+                return false;
+              },
+              child: TransactionsTab(
+                currency: widget.currency,
+                currencySymbol: widget.currencySymbol,
+                transactions: widget.transactions,
+                accounts: widget.accounts,
+                categories: widget.categories,
+                onDeleteTransaction: widget.onDeleteTransaction,
+                onUpdateTransaction: widget.onUpdateTransaction,
+              ),
             ),
-            SettingsTab(
-              onExportData: widget.onExportData,
-              onImportData: (jsonData) async =>
-                  await widget.onImportData(jsonData),
-              onReset: widget.onReset,
-              biometricEnabled: widget.biometricEnabled,
-              onBiometricChanged: widget.onBiometricChanged,
-              categories: widget.categories,
-              onAddCategory: widget.onAddCategory,
-              onUpdateCategory: widget.onUpdateCategory,
-              onDeleteCategory: widget.onDeleteCategory,
+            NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollUpdateNotification) {
+                  final currentOffset = notification.metrics.pixels;
+                  final delta = currentOffset - _lastScrollOffset;
+
+                  if (delta.abs() > _scrollThreshold) {
+                    final shouldExtend = delta < 0;
+                    _onVerticalScroll(shouldExtend);
+                    _lastScrollOffset = currentOffset;
+                  }
+                }
+                return false;
+              },
+              child: SettingsTab(
+                onExportData: widget.onExportData,
+                onImportData: (jsonData) async =>
+                    await widget.onImportData(jsonData),
+                onReset: widget.onReset,
+                biometricEnabled: widget.biometricEnabled,
+                onBiometricChanged: widget.onBiometricChanged,
+                categories: widget.categories,
+                onAddCategory: widget.onAddCategory,
+                onUpdateCategory: widget.onUpdateCategory,
+                onDeleteCategory: widget.onDeleteCategory,
+              ),
             ),
           ],
         ),

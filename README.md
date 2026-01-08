@@ -45,7 +45,7 @@ Keep track of every transaction, understand your spending patterns, and make inf
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/fends.git
+git clone https://github.com/felle-dev/fends-app.git
 cd fends
 ```
 

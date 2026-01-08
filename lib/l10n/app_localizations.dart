@@ -205,7 +205,7 @@ class AppLocalizations {
       'about': 'About',
       'appVersionInfo': 'App version and information',
       'appName': 'Fends',
-      'appVersion': '1.0.0',
+      'appVersion': '1.1.0',
       'appDescription':
           'A simple and beautiful budget tracking app to help you manage your finances.',
       'privacyPolicy': 'Privacy Policy',
@@ -213,6 +213,8 @@ class AppLocalizations {
       'privacyMessage':
           'All your financial data is stored locally on your device. We do not collect, transmit, or store any of your personal information on external servers. Your privacy is our priority.',
       'close': 'Close',
+      'sourceCode': 'Source Code',
+      'viewOnGitHub': 'View on GitHub',
 
       // Danger Zone
       'dangerZone': 'Danger Zone',
@@ -427,7 +429,7 @@ class AppLocalizations {
       'about': 'Tentang',
       'appVersionInfo': 'Versi dan informasi aplikasi',
       'appName': 'Fends',
-      'appVersion': '1.0.0',
+      'appVersion': '1.1.0',
       'appDescription':
           'Aplikasi pelacakan anggaran yang sederhana dan indah untuk membantu Anda mengelola keuangan.',
       'privacyPolicy': 'Kebijakan Privasi',
@@ -435,6 +437,8 @@ class AppLocalizations {
       'privacyMessage':
           'Semua data keuangan Anda disimpan secara lokal di perangkat Anda. Kami tidak mengumpulkan, mentransmisikan, atau menyimpan informasi pribadi Anda di server eksternal. Privasi Anda adalah prioritas kami.',
       'close': 'Tutup',
+      'sourceCode': 'Kode Sumber',
+      'viewOnGitHub': 'Lihat di GitHub',
 
       // Danger Zone
       'dangerZone': 'Zona Berbahaya',

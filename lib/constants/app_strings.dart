@@ -220,7 +220,7 @@ class AppStrings {
       'App version and information';
   static String get appName => _localizations?.translate('appName') ?? 'Fends';
   static String get appVersion =>
-      _localizations?.translate('appVersion') ?? '1.0.0';
+      _localizations?.translate('appVersion') ?? '1.1.0';
   static String get appDescription =>
       _localizations?.translate('appDescription') ??
       'A simple and beautiful budget tracking app';
@@ -231,6 +231,10 @@ class AppStrings {
   static String get privacyMessage =>
       _localizations?.translate('privacyMessage') ??
       'All your financial data is stored locally';
+  static String get sourceCode =>
+      _localizations?.translate('sourceCode') ?? 'Source Code';
+  static String get viewOnGitHub =>
+      _localizations?.translate('viewOnGitHub') ?? 'View on GitHub';
 
   // Danger Zone
   static String get dangerZone =>

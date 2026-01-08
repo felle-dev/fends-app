@@ -12,6 +12,7 @@ import 'package:local_auth/local_auth.dart';
 import 'dart:io';
 import 'package:fends/model.dart';
 import 'package:fends/constants/app_strings.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsTab extends StatefulWidget {
   final Future<void> Function(String)? onImportData;
@@ -437,6 +438,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   );
                 },
               ),
+
               Divider(
                 height: 1,
                 indent: 72,
@@ -473,6 +475,32 @@ class _SettingsTabState extends State<SettingsTab> {
                       ],
                     ),
                   );
+                },
+              ),
+              Divider(
+                height: 1,
+                indent: 72,
+                color: theme.colorScheme.outlineVariant,
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.code, color: Colors.blue),
+                ),
+                title: Text(AppStrings.sourceCode),
+                subtitle: Text(AppStrings.viewOnGitHub),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () async {
+                  final uri = Uri.parse(
+                    'https://github.com/felle-dev/fends-app',
+                  );
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
                 },
               ),
             ],
