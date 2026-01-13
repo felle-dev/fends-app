@@ -86,7 +86,7 @@ If you find Fends useful, please consider:
 
 ## License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 [release-badge]: https://img.shields.io/github/v/release/felle-dev/fends-app?style=for-the-badge
 [flutter-badge]: https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white
