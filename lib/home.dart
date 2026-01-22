@@ -31,6 +31,8 @@ class HomeScreen extends StatefulWidget {
   final bool? biometricEnabled;
   final Function(bool)? onBiometricChanged;
   final Function(DateTime)? onUpdateFinalDate;
+  final DateTime? debugCurrentDate;
+  final Function(DateTime)? onDebugDateChange;
 
   const HomeScreen({
     super.key,
@@ -55,6 +57,8 @@ class HomeScreen extends StatefulWidget {
     this.biometricEnabled,
     this.onBiometricChanged,
     this.onUpdateFinalDate,
+    this.debugCurrentDate,
+    this.onDebugDateChange,
   });
 
   @override
@@ -287,6 +291,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onDeleteTransaction: widget.onDeleteTransaction,
                 onUpdateTransaction: widget.onUpdateTransaction,
                 onUpdateFinalDate: widget.onUpdateFinalDate,
+                debugCurrentDate: widget.debugCurrentDate,
+                onDebugDateChange: widget.onDebugDateChange,
               ),
             ),
             NotificationListener<ScrollNotification>(

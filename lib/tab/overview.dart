@@ -17,7 +17,9 @@ class OverviewTab extends StatelessWidget {
   final VoidCallback onNavigateToTransactions;
   final Function(String) onDeleteTransaction;
   final Function(Transaction) onUpdateTransaction;
-  final Function(DateTime)? onUpdateFinalDate; // NEW: Add this callback
+  final Function(DateTime)? onUpdateFinalDate;
+  final DateTime? debugCurrentDate;
+  final Function(DateTime)? onDebugDateChange;
 
   const OverviewTab({
     super.key,
@@ -32,7 +34,9 @@ class OverviewTab extends StatelessWidget {
     required this.onNavigateToTransactions,
     required this.onDeleteTransaction,
     required this.onUpdateTransaction,
-    this.onUpdateFinalDate, // NEW
+    this.onUpdateFinalDate,
+    this.debugCurrentDate,
+    this.onDebugDateChange,
   });
 
   Category _getCategoryById(String categoryId) {

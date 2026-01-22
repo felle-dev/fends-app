@@ -28,6 +28,13 @@ class _AppControllerState extends State<AppController> {
   bool _biometricEnabled = false;
   bool _isAuthenticated = false;
   final LocalAuthentication _localAuth = LocalAuthentication();
+  DateTime? _debugCurrentDate;
+
+  void _handleDebugDateChange(DateTime newDate) {
+    setState(() {
+      _debugCurrentDate = newDate;
+    });
+  }
 
   @override
   void initState() {
@@ -395,6 +402,7 @@ class _AppControllerState extends State<AppController> {
       'currencySymbol': _currencySymbol,
       'totalBudget': _totalBudget,
       'finalDate': _finalDate?.toIso8601String(),
+      'biometricEnabled': _biometricEnabled,
       'transactions': _transactions.map((e) => e.toJson()).toList(),
       'accounts': _accounts.map((e) => e.toJson()).toList(),
       'categories': _categories.map((e) => e.toJson()).toList(),
@@ -410,15 +418,16 @@ class _AppControllerState extends State<AppController> {
         _currency = data['currency'] ?? 'IDR';
         _currencySymbol = data['currencySymbol'] ?? 'Rp';
         _totalBudget = (data['totalBudget'] ?? 0).toDouble();
+        _biometricEnabled = data['biometricEnabled'] ?? false;
 
         if (data['finalDate'] != null) {
           _finalDate = DateTime.parse(data['finalDate']);
         }
 
-        if (data['transactions'] != null) {
-          final List<dynamic> transactionsJson = data['transactions'];
-          _transactions = transactionsJson
-              .map((e) => Transaction.fromJson(e))
+        if (data['categories'] != null) {
+          final List<dynamic> categoriesJson = data['categories'];
+          _categories = categoriesJson
+              .map((e) => Category.fromJson(e))
               .toList();
         }
 
@@ -427,10 +436,10 @@ class _AppControllerState extends State<AppController> {
           _accounts = accountsJson.map((e) => Account.fromJson(e)).toList();
         }
 
-        if (data['categories'] != null) {
-          final List<dynamic> categoriesJson = data['categories'];
-          _categories = categoriesJson
-              .map((e) => Category.fromJson(e))
+        if (data['transactions'] != null) {
+          final List<dynamic> transactionsJson = data['transactions'];
+          _transactions = transactionsJson
+              .map((e) => Transaction.fromJson(e))
               .toList();
         }
       });
@@ -533,6 +542,8 @@ class _AppControllerState extends State<AppController> {
       onImportData: _importData,
       biometricEnabled: _biometricEnabled,
       onBiometricChanged: _saveBiometricPreference,
+      debugCurrentDate: _debugCurrentDate,
+      onDebugDateChange: _handleDebugDateChange,
     );
   }
 }
