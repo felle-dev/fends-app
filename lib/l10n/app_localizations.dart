@@ -235,8 +235,31 @@ class AppLocalizations {
       'selected': 'Selected',
       'chooseDate': 'Choose Date',
       'confirm': 'Confirm',
+
+      'day': 'day',
+      'days': 'days',
+      'finalBalance': 'Final Balance',
+      'startingBudget': 'Starting Budget',
+      'periodSummary': 'Period Summary',
+      'stayedWithinBudget': 'Final balance (you stayed within budget!)',
+      'overspent': 'Final balance (overspent)',
+      'periodEndedSuccess':
+          'Your budget period has ended. Great job staying within budget!',
+      'periodEndedOverspent':
+          'Your budget period has ended. You went over budget, but that\'s okay - use this as learning for next time.',
     },
     'id': {
+      'day': 'hari',
+      'days': 'hari',
+      'finalBalance': 'Saldo Akhir',
+      'startingBudget': 'Anggaran Awal',
+      'periodSummary': 'Ringkasan Periode',
+      'stayedWithinBudget': 'Saldo akhir (Anda tetap dalam anggaran!)',
+      'overspent': 'Saldo akhir (melebihi anggaran)',
+      'periodEndedSuccess':
+          'Periode anggaran Anda telah berakhir. Kerja bagus tetap dalam anggaran!',
+      'periodEndedOverspent':
+          'Periode anggaran Anda telah berakhir. Anda melebihi anggaran, tapi tidak apa-apa - gunakan ini sebagai pembelajaran untuk lain kali.',
       // Onboarding
       'welcomeToFends': 'Selamat Datang di Fends',
       'welcomeDescription':

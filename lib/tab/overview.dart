@@ -243,10 +243,10 @@ class OverviewTab extends StatelessWidget {
       _baseDailyAllowance + _rolloverAmount + _distributedExcess;
 
   Widget _buildDailySpendingFocusCard(ThemeData theme, BuildContext context) {
-    // NEW: Handle past final date
+    // Handle past final date
     if (_isPastFinalDate) {
       return GestureDetector(
-        onTap: () => _showBudgetExplanationDialog(context, theme),
+        onTap: () => _showBudgetExplanationBottomSheet(context, theme),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
@@ -285,8 +285,8 @@ class OverviewTab extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   _currentBalance >= 0
-                      ? 'Final balance (you stayed within budget!)'
-                      : 'Final balance (overspent)',
+                      ? AppStrings.stayedWithinBudget
+                      : AppStrings.overspent,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -303,7 +303,7 @@ class OverviewTab extends StatelessWidget {
     final isOverBudget = remainingBudget < 0;
 
     return GestureDetector(
-      onTap: () => _showBudgetExplanationDialog(context, theme),
+      onTap: () => _showBudgetExplanationBottomSheet(context, theme),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
@@ -346,130 +346,174 @@ class OverviewTab extends StatelessWidget {
     );
   }
 
-  void _showBudgetExplanationDialog(BuildContext context, ThemeData theme) {
+  void _showBudgetExplanationBottomSheet(
+    BuildContext context,
+    ThemeData theme,
+  ) {
     final remainingBudget =
         _dailyAllowanceWithRollover + _todayIncome - _todaySpent;
     final isOverBudget = remainingBudget < 0;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppStrings.budgetBreakdown),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!_isPastFinalDate) ...[
-                _buildExplanationRow(
-                  theme,
-                  AppStrings.baseDailyAllowance,
-                  _baseDailyAllowance,
-                  Icons.calendar_today,
-                  theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 12),
-                _buildExplanationRow(
-                  theme,
-                  AppStrings.rolloverFromPreviousDays,
-                  _rolloverAmount,
-                  Icons.trending_up,
-                  Colors.green,
-                ),
-                const SizedBox(height: 12),
-                _buildExplanationRow(
-                  theme,
-                  AppStrings.todaysIncome,
-                  _todayIncome,
-                  Icons.add_circle,
-                  Colors.teal,
-                ),
-                const SizedBox(height: 12),
-                _buildExplanationRow(
-                  theme,
-                  AppStrings.todaysSpending,
-                  -_todaySpent,
-                  Icons.remove_circle,
-                  Colors.red,
-                ),
-                const Divider(height: 24),
-                _buildExplanationRow(
-                  theme,
-                  AppStrings.remainingBudget,
-                  remainingBudget,
-                  Icons.account_balance_wallet,
-                  isOverBudget ? Colors.red : Colors.green,
-                  isBold: true,
-                ),
-              ] else ...[
-                _buildExplanationRow(
-                  theme,
-                  'Final Balance',
-                  _currentBalance,
-                  Icons.account_balance_wallet,
-                  _currentBalance >= 0 ? Colors.green : Colors.red,
-                  isBold: true,
-                ),
-                const SizedBox(height: 12),
-                _buildExplanationRow(
-                  theme,
-                  'Starting Budget',
-                  totalBudget,
-                  Icons.monetization_on,
-                  theme.colorScheme.primary,
-                ),
-              ],
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    AppStrings.budgetBreakdown,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          size: 16,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isPastFinalDate
-                              ? 'Period Summary'
-                              : AppStrings.howItWorks,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+                    if (!_isPastFinalDate) ...[
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.baseDailyAllowance,
+                        _baseDailyAllowance,
+                        Icons.calendar_today,
+                        theme.colorScheme.primary,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.rolloverFromPreviousDays,
+                        _rolloverAmount,
+                        Icons.trending_up,
+                        Colors.green,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.todaysIncome,
+                        _todayIncome,
+                        Icons.add_circle,
+                        Colors.teal,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.todaysSpending,
+                        -_todaySpent,
+                        Icons.remove_circle,
+                        Colors.red,
+                      ),
+                      const Divider(height: 24),
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.remainingBudget,
+                        remainingBudget,
+                        Icons.account_balance_wallet,
+                        isOverBudget ? Colors.red : Colors.green,
+                        isBold: true,
+                      ),
+                    ] else ...[
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.finalBalance,
+                        _currentBalance,
+                        Icons.account_balance_wallet,
+                        _currentBalance >= 0 ? Colors.green : Colors.red,
+                        isBold: true,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildExplanationRow(
+                        theme,
+                        AppStrings.startingBudget,
+                        totalBudget,
+                        Icons.monetization_on,
+                        theme.colorScheme.primary,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _isPastFinalDate
+                                    ? AppStrings.periodSummary
+                                    : AppStrings.howItWorks,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isPastFinalDate
-                          ? 'Your budget period has ended. ${_currentBalance >= 0 ? "Great job staying within budget!" : "You went over budget, but that\'s okay - use this as learning for next time."}'
-                          : AppStrings.budgetExplanationText,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.5,
+                          const SizedBox(height: 8),
+                          Text(
+                            _isPastFinalDate
+                                ? (_currentBalance >= 0
+                                      ? AppStrings.periodEndedSuccess
+                                      : AppStrings.periodEndedOverspent)
+                                : AppStrings.budgetExplanationText,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppStrings.gotIt),
-          ),
-        ],
       ),
     );
   }
@@ -700,7 +744,7 @@ class OverviewTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildBalanceGraphCard(theme, context), // NEW: Pass context
+        _buildBalanceGraphCard(theme, context),
         const SizedBox(height: 16),
         _buildDailySpendingFocusCard(theme, context),
         const SizedBox(height: 24),
@@ -932,7 +976,7 @@ class OverviewTab extends StatelessWidget {
                         Text(
                           _isPastFinalDate
                               ? 'Ended • ${DateFormat('MMM d').format(finalDate)}'
-                              : '$_daysLeft ${_daysLeft == 1 ? 'day' : 'days'} • ${DateFormat('MMM d').format(finalDate)}',
+                              : '$_daysLeft ${_daysLeft == 1 ? AppStrings.day : AppStrings.days} • ${DateFormat('MMM d').format(finalDate)}',
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: _isPastFinalDate
                                 ? theme.colorScheme.error

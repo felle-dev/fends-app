@@ -421,6 +421,27 @@ class AppStrings {
   static String get confirm =>
       _localizations?.translate('confirm') ?? 'Confirm';
 
+  static String get day => _localizations?.translate('day') ?? 'day';
+  static String get days => _localizations?.translate('days') ?? 'days';
+
+  static String get finalBalance =>
+      _localizations?.translate('finalBalance') ?? 'Final Balance';
+  static String get startingBudget =>
+      _localizations?.translate('startingBudget') ?? 'Starting Budget';
+  static String get periodSummary =>
+      _localizations?.translate('periodSummary') ?? 'Period Summary';
+  static String get stayedWithinBudget =>
+      _localizations?.translate('stayedWithinBudget') ??
+      'Final balance (you stayed within budget!)';
+  static String get overspent =>
+      _localizations?.translate('overspent') ?? 'Final balance (overspent)';
+  static String get periodEndedSuccess =>
+      _localizations?.translate('periodEndedSuccess') ??
+      'Your budget period has ended. Great job staying within budget!';
+  static String get periodEndedOverspent =>
+      _localizations?.translate('periodEndedOverspent') ??
+      'Your budget period has ended. You went over budget, but that\'s okay - use this as learning for next time.';
+
   static String format(String template, List<String> args) {
     String result = template;
     for (var arg in args) {

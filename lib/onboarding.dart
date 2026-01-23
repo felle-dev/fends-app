@@ -66,7 +66,16 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 2:
         return _accounts.isNotEmpty;
       case 3:
-        return _selectedDate != null;
+        if (_selectedDate == null) return false;
+
+        final totalBudget = _accounts.fold<double>(
+          0.0,
+          (sum, account) => sum + account.initialBalance,
+        );
+        final daysRemaining = _selectedDate!.difference(DateTime.now()).inDays;
+        final dailyBudget = totalBudget / daysRemaining;
+
+        return dailyBudget >= 1.0;
       default:
         return false;
     }
