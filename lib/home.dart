@@ -832,14 +832,12 @@ class _HomeScreenState extends State<HomeScreen> {
 class _NavItem extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
-  final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _NavItem({
     required this.icon,
     required this.selectedIcon,
-    required this.label,
     required this.isSelected,
     required this.onTap,
   });
@@ -855,42 +853,26 @@ class _NavItem extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isSelected
                 ? theme.colorScheme.primaryContainer.withOpacity(0.7)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(30),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, animation) {
-                  return ScaleTransition(scale: animation, child: child);
-                },
-                child: Icon(
-                  isSelected ? selectedIcon : icon,
-                  key: ValueKey(isSelected),
-                  color: isSelected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurfaceVariant,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: theme.textTheme.labelSmall!.copyWith(
-                  color: isSelected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.normal,
-                ),
-                child: Text(label),
-              ),
-            ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) {
+              return ScaleTransition(scale: animation, child: child);
+            },
+            child: Icon(
+              isSelected ? selectedIcon : icon,
+              key: ValueKey(isSelected),
+              color: isSelected
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 24,
+            ),
           ),
         ),
       ),
@@ -945,28 +927,24 @@ class CustomFloatingNavBar extends StatelessWidget {
                 _NavItem(
                   icon: Icons.home_outlined,
                   selectedIcon: Icons.home,
-                  label: AppStrings.overview,
                   isSelected: currentIndex == 0,
                   onTap: () => onTap(0),
                 ),
                 _NavItem(
                   icon: Icons.account_balance_wallet_outlined,
                   selectedIcon: Icons.account_balance_wallet,
-                  label: AppStrings.accounts,
                   isSelected: currentIndex == 1,
                   onTap: () => onTap(1),
                 ),
                 _NavItem(
                   icon: Icons.receipt_long_outlined,
                   selectedIcon: Icons.receipt_long,
-                  label: AppStrings.transactions,
                   isSelected: currentIndex == 2,
                   onTap: () => onTap(2),
                 ),
                 _NavItem(
                   icon: Icons.settings_outlined,
                   selectedIcon: Icons.settings,
-                  label: AppStrings.settings,
                   isSelected: currentIndex == 3,
                   onTap: () => onTap(3),
                 ),
