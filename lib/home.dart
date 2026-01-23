@@ -372,17 +372,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        child: FloatingActionButton.extended(
-          onPressed: () => _showAddTransactionDialog(context),
-          icon: const Icon(Icons.add),
-          label: _isFabExtended
-              ? Text(AppStrings.addTransaction)
-              : const SizedBox.shrink(),
-          isExtended: _isFabExtended,
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddTransactionDialog(context),
+        icon: const Icon(Icons.add),
+        label: Text(AppStrings.addTransaction),
+        isExtended: _isFabExtended,
       ),
       extendBody: true,
       bottomNavigationBar: Container(
